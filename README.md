@@ -16,3 +16,11 @@ Datei `index.html` im Browser öffnen.
 
 ## Wichtige Einschränkung
 Dies ist bewusst ein MVP ohne Backend, Login, Datenbank, KI-API, Kalenderintegration oder Payment. Diese Punkte gehören in spätere Iterationen.
+
+
+## Update v1.1
+
+- Neues Networkee-App-Icon auf Basis des gewünschten Motivs
+- Icon auf der Startseite integriert
+- PWA-Icons für GitHub Pages / Home-Screen ergänzt
+- Apple Touch Icon ergänzt
