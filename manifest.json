@@ -1,0 +1,12 @@
+{
+  "name": "Networkee MVP",
+  "short_name": "Networkee",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#172554",
+  "description": "Personal CRM MVP for relationship management.",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

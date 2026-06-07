@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#172554" />
+  <title>Networkee MVP</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Personal CRM MVP</p>
+        <h1>Networkee</h1>
+      </div>
+      <button id="exportBtn" class="ghost-btn">Export</button>
+    </header>
+
+    <main>
+      <section id="dashboard" class="view active">
+        <div class="hero-card">
+          <p class="eyebrow">Heute im Fokus</p>
+          <h2 id="focusTitle">Baue Beziehungen systematisch auf.</h2>
+          <p id="focusText">Erfasse Kontakte, notiere Gespräche und halte nächste Schritte fest.</p>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span id="contactCount">0</span>
+            <p>Kontakte</p>
+          </article>
+          <article class="stat-card">
+            <span id="noteCount">0</span>
+            <p>Interaktionen</p>
+          </article>
+          <article class="stat-card urgent">
+            <span id="dueCount">0</span>
+            <p>Fällige Follow-ups</p>
+          </article>
+        </div>
+
+        <section class="panel">
+          <div class="section-head">
+            <h3>Nächste Follow-ups</h3>
+            <button class="text-btn" data-nav="contacts">Alle Kontakte</button>
+          </div>
+          <div id="followupList" class="list empty-state">Noch keine Follow-ups vorhanden.</div>
+        </section>
+      </section>
+
+      <section id="contacts" class="view">
+        <div class="section-head sticky-head">
+          <h2>Kontakte</h2>
+          <button id="addContactBtn" class="primary-btn">+ Kontakt</button>
+        </div>
+        <input id="searchInput" class="search" placeholder="Kontakt, Firma, Tag suchen …" />
+        <div id="contactList" class="contact-list"></div>
+      </section>
+
+      <section id="capture" class="view">
+        <div class="section-head">
+          <h2>Interaktion erfassen</h2>
+        </div>
+        <form id="noteForm" class="form-card">
+          <label>Kontakt
+            <select id="noteContact" required></select>
+          </label>
+          <label>Art der Interaktion
+            <select id="noteType">
+              <option>Meeting</option>
+              <option>Call</option>
+              <option>Nachricht</option>
+              <option>Zufälliges Gespräch</option>
+            </select>
+          </label>
+          <label>Notiz / Gesprächszusammenfassung
+            <textarea id="noteText" rows="6" placeholder="Was wurde besprochen? Interessen, Pain Points, nächste Schritte …" required></textarea>
+          </label>
+          <label>Nächster Schritt
+            <input id="nextStep" placeholder="z. B. In 2 Wochen nachfragen" />
+          </label>
+          <label>Follow-up Datum
+            <input id="followupDate" type="date" />
+          </label>
+          <button class="primary-btn" type="submit">Interaktion speichern</button>
+        </form>
+      </section>
+
+      <section id="insights" class="view">
+        <div class="section-head">
+          <h2>Relationship Insights</h2>
+        </div>
+        <div id="insightList" class="list empty-state">Noch keine Insights vorhanden.</div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-nav="dashboard">Dashboard</button>
+      <button class="nav-btn" data-nav="contacts">Kontakte</button>
+      <button class="nav-btn" data-nav="capture">Erfassen</button>
+      <button class="nav-btn" data-nav="insights">Insights</button>
+    </nav>
+  </div>
+
+  <dialog id="contactDialog">
+    <form id="contactForm" method="dialog" class="dialog-card">
+      <h2 id="dialogTitle">Kontakt hinzufügen</h2>
+      <input type="hidden" id="contactId" />
+      <label>Name
+        <input id="contactName" required placeholder="z. B. Angela Arena" />
+      </label>
+      <label>Rolle / Kontext
+        <input id="contactRole" placeholder="z. B. Assistentin Geschäftsleitung" />
+      </label>
+      <label>Firma
+        <input id="contactCompany" placeholder="z. B. Nexi" />
+      </label>
+      <label>Tags
+        <input id="contactTags" placeholder="Sales, Mentor, Netzwerk" />
+      </label>
+      <label>Beziehungsziel
+        <select id="relationshipGoal">
+          <option>Kontakt warm halten</option>
+          <option>Geschäftschance entwickeln</option>
+          <option>Mentoring / Karriere</option>
+          <option>Privater Kontakt</option>
+        </select>
+      </label>
+      <label>Wichtig zu merken
+        <textarea id="contactMemory" rows="4" placeholder="Persönliche Details, Interessen, letzte Themen …"></textarea>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="cancelDialog" class="ghost-btn">Abbrechen</button>
+        <button type="submit" class="primary-btn">Speichern</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
