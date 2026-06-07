@@ -24,3 +24,9 @@ Dies ist bewusst ein MVP ohne Backend, Login, Datenbank, KI-API, Kalenderintegra
 - Icon auf der Startseite integriert
 - PWA-Icons für GitHub Pages / Home-Screen ergänzt
 - Apple Touch Icon ergänzt
+
+
+## Version 1.2
+
+- App icon, Apple Touch Icon und Manifest-Icons auf das Networkee-Glühbirnenmotiv aktualisiert.
+- Cache-Version des Service Workers erhöht, damit GitHub Pages die neuen Assets ausliefert.
