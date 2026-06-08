@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=4.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=4.0" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=4.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=5.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=5.0" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=5.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=4.0" />
-  <link rel="stylesheet" href="styles.css?v=4.0" />
+  <link rel="manifest" href="manifest.json?v=5.0" />
+  <link rel="stylesheet" href="styles.css?v=5.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -26,7 +26,7 @@
     <aside id="sideMenu" class="side-menu" aria-hidden="true">
       <div class="menu-panel">
         <div class="menu-head">
-          <img src="networkee-icon.png?v=4.0" alt="Networkee Icon" />
+          <img src="networkee-icon.png?v=5.0" alt="Networkee Icon" />
           <div>
             <strong>Networkee</strong>
             <p>Relationship OS</p>
@@ -38,7 +38,12 @@
         <button class="menu-item" data-nav="capture">Capture <span>Gespräche festhalten</span></button>
         <button class="menu-item" data-nav="insights">Insights <span>Signale & Empfehlungen</span></button>
         <button class="menu-item" data-nav="settings">Settings <span>Daten & Demo</span></button>
-        <button id="exportBtn" class="menu-item secondary">Export Center <span>JSON, CSV oder PDF sichern</span></button>
+        <div class="menu-divider"></div>
+        <button id="shareQrBtn" class="menu-item secondary">QR teilen <span>Digitaler Networkee-Code</span></button>
+        <button id="scanQrBtn" class="menu-item secondary">QR scannen <span>Kontakt oder Visitenkarte erfassen</span></button>
+        <button id="importBtn" class="menu-item secondary">Import <span>Kontakte später synchronisieren</span></button>
+        <button id="exportBtn" class="menu-item secondary">Export Hub <span>JSON, CSV, PDF oder vCard</span></button>
+        <button id="helpBtn" class="menu-item secondary">Hilfe <span>Quick Tour & Support</span></button>
       </div>
     </aside>
 
@@ -46,7 +51,7 @@
       <section id="today" class="view active">
         <div class="hero-card emotional">
           <div class="hero-brand">
-            <img src="networkee-icon.png?v=4.0" alt="Networkee Icon" class="hero-icon" />
+            <img src="networkee-icon.png?v=5.0" alt="Networkee Icon" class="hero-icon" />
             <div>
               <p class="eyebrow">Heute im Fokus</p>
               <h2>Dein Netzwerk erinnert sich nicht von selbst.</h2>
@@ -55,7 +60,12 @@
           </div>
         </div>
 
-        <section class="assistant-card">
+        <section class="panel feed-panel">
+          <div class="section-head"><h3>Relationship Feed</h3><button class="text-btn" data-nav="insights">Alle ansehen</button></div>
+          <div id="relationshipFeed" class="feed-list"></div>
+        </section>
+
+        <section class="assistant-card ai-focus">
           <p class="eyebrow">Networkee Assistant</p>
           <h3 id="assistantHeadline">Heute ist dein Netzwerk stabil.</h3>
           <p id="assistantCopy">Erfasse weitere Interaktionen, damit Networkee bessere Signale erkennt.</p>
@@ -76,7 +86,7 @@
         </section>
 
         <section class="panel">
-          <div class="section-head"><h3>Relationship Signals</h3></div>
+          <div class="section-head"><h3>Relationship Radar</h3><button class="text-btn" data-nav="network">Öffnen</button></div>
           <div id="signalList" class="signal-grid"></div>
         </section>
       </section>
@@ -92,9 +102,16 @@
 
       <section id="capture" class="view">
         <div class="section-head"><h2>Capture</h2></div>
-        <div class="voice-card">
-          <button id="voiceNoteBtn" class="voice-btn" type="button">🎙️ Voice Note</button>
-          <p>Später wird daraus der schnellste Flow: sprechen, verdichten, erinnern lassen.</p>
+        <div class="voice-card capture-intro">
+          <p class="eyebrow">Was ist passiert?</p>
+          <h3>Halte den Moment fest, solange er frisch ist.</h3>
+          <div class="capture-options">
+            <button id="voiceNoteBtn" class="capture-chip" type="button">🎙️ Voice Memo</button>
+            <button id="textNoteBtn" class="capture-chip" type="button">✍️ Gesprächsnotiz</button>
+            <button id="meetingNoteBtn" class="capture-chip" type="button">📅 Meeting</button>
+            <button id="cardScanBtn" class="capture-chip" type="button">📷 Visitenkarte</button>
+          </div>
+          <p>Später wird daraus der schnellste KI-Flow: erfassen, transkribieren, verdichten, erinnern lassen.</p>
         </div>
         <form id="noteForm" class="form-card">
           <label>Person
@@ -196,6 +213,7 @@
         <button id="exportJsonBtn" class="export-option" type="button"><strong>JSON</strong><span>Vollständiges Backup für spätere Migration</span></button>
         <button id="exportCsvBtn" class="export-option" type="button"><strong>CSV</strong><span>Kontakte und Interaktionen als Tabellen</span></button>
         <button id="exportPdfBtn" class="export-option" type="button"><strong>PDF</strong><span>Relationship Report als lesbares Dokument</span></button>
+        <button id="exportVcardBtn" class="export-option" type="button"><strong>vCard</strong><span>Kontakte als Adressbuch-Datei</span></button>
       </div>
       <div class="dialog-actions">
         <button type="button" id="closeExport" class="ghost-btn">Schliessen</button>
@@ -203,6 +221,6 @@
     </article>
   </dialog>
 
-  <script src="app.js?v=4.0"></script>
+  <script src="app.js?v=5.0"></script>
 </body>
 </html>

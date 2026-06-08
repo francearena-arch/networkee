@@ -1,8 +1,8 @@
-# Networkee MVP v4
+# Networkee MVP v5
 
 Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS.
 
-## Neu in v4
+## Neu in v5
 
 - Relationship Signals als echte Handlungssignale
 - Export Center mit JSON, CSV und PDF

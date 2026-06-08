@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'networkee_mvp_v4';
-const LEGACY_KEYS = ['networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
+const STORAGE_KEY = 'networkee_mvp_v5';
+const LEGACY_KEYS = ['networkee_mvp_v4', 'networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
 
 function daysAgo(days) {
   const d = new Date();
@@ -23,7 +23,7 @@ const seedData = {
       goal: 'Kontakt warm halten',
       priority: 'Medium',
       birthday: '',
-      memory: 'Exploratives Interview für Networkee. Relevante Zielgruppe mit hohem Organisationsbezug.',
+      memory: 'Exploratives Interview für Networkee. Relevante Zielgruppe mit hohem Organisationsbezug. Merken: mag klare Strukturen, arbeitet nah an Geschäftsleitung, offen für smarte Erinnerungen.',
       createdAt: daysAgo(42)
     },
     {
@@ -35,15 +35,15 @@ const seedData = {
       goal: 'Geschäftschance entwickeln',
       priority: 'High',
       birthday: '',
-      memory: 'Perspektive aus Sales/Key Account. Hoher Fit für Relationship-Management-Use-Cases.',
+      memory: 'Perspektive aus Sales/Key Account. Hoher Fit für Relationship-Management-Use-Cases. Merken: Vertrieb, CRM, persönliche Vorbereitung vor Gesprächen, Business Opportunity.',
       createdAt: daysAgo(120)
     }
   ],
   notes: []
 };
 seedData.notes = [
-  { id: crypto.randomUUID(), contactId: seedData.contacts[0].id, type: 'Meeting', text: 'Über Organisation, persönliche Kontaktpflege und Reminder gesprochen.', nextStep: 'In 30 Tagen Feedback zum MVP einholen.', followupDate: daysFromNow(7), createdAt: daysAgo(18) },
-  { id: crypto.randomUUID(), contactId: seedData.contacts[1].id, type: 'Call', text: 'Sales-Perspektive: Beziehungen leben von Kontext und Timing.', nextStep: 'Use Case für Sales-Persona validieren.', followupDate: daysFromNow(-1), createdAt: daysAgo(91) }
+  { id: crypto.randomUUID(), contactId: seedData.contacts[0].id, type: 'Meeting', text: 'Über Organisation, persönliche Kontaktpflege und Reminder gesprochen. Angela sieht Nutzen in vorbereitenden Gesprächsnotizen und Follow-up-Hinweisen.', nextStep: 'In 30 Tagen Feedback zum MVP einholen.', followupDate: daysFromNow(7), createdAt: daysAgo(18) },
+  { id: crypto.randomUUID(), contactId: seedData.contacts[1].id, type: 'Call', text: 'Sales-Perspektive: Beziehungen leben von Kontext und Timing. Peter betonte: Vor Gesprächen zählen letzte Themen, offene Chancen und persönliche Details.', nextStep: 'Use Case für Sales-Persona validieren.', followupDate: daysFromNow(-1), createdAt: daysAgo(91) }
 ];
 
 let state = loadState();
@@ -113,11 +113,16 @@ document.getElementById('cancelDialog').addEventListener('click', () => document
 document.getElementById('closeProfile').addEventListener('click', () => document.getElementById('profileDialog').close());
 document.getElementById('searchInput').addEventListener('input', renderContacts);
 
-document.getElementById('voiceNoteBtn').addEventListener('click', () => {
-  document.getElementById('noteType').value = 'Voice Note';
-  document.getElementById('noteText').value = 'Voice Note Placeholder: Gespräch kurz zusammenfassen, später via KI automatisch transkribieren und verdichten.';
+function setCaptureMode(type, text) {
+  document.getElementById('noteType').value = type;
+  document.getElementById('noteText').value = text;
   document.getElementById('noteText').focus();
-});
+}
+document.getElementById('voiceNoteBtn').addEventListener('click', () => setCaptureMode('Voice Note', 'Voice Note Placeholder: Gespräch kurz zusammenfassen, später via KI automatisch transkribieren und verdichten.'));
+document.getElementById('textNoteBtn').addEventListener('click', () => setCaptureMode('Nachricht', 'Gesprächsnotiz: Was ist passiert? Welche persönlichen Details, Interessen oder Chancen sollte Networkee merken?'));
+document.getElementById('meetingNoteBtn').addEventListener('click', () => setCaptureMode('Meeting', 'Meeting-Zusammenfassung: Kontext, Themen, Entscheidungen, nächste Schritte und persönlicher Gesprächsanker.'));
+document.getElementById('cardScanBtn').addEventListener('click', () => setCaptureMode('Zufälliges Gespräch', 'Visitenkarte/Scan Placeholder: Neue Person erfassen, Kontext notieren und Follow-up setzen.'));
+
 
 document.getElementById('resetDemoBtn').addEventListener('click', () => {
   if (!confirm('Demo-Daten wirklich zurücksetzen?')) return;
@@ -178,6 +183,8 @@ document.getElementById('closeExport').addEventListener('click', () => document.
 document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
 document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
 document.getElementById('exportPdfBtn').addEventListener('click', exportPDF);
+document.getElementById('exportVcardBtn').addEventListener('click', exportVCARD);
+['shareQrBtn','scanQrBtn','importBtn','helpBtn'].forEach(id => document.getElementById(id)?.addEventListener('click', () => { closeMenu(); alert('Placeholder für eine spätere Networkee-Funktion.'); }));
 
 function downloadBlob(filename, content, type) {
   const blob = content instanceof Blob ? content : new Blob([content], { type });
@@ -265,6 +272,34 @@ function exportPDF() {
     ]))
   ];
   downloadBlob(`networkee-report-${new Date().toISOString().slice(0,10)}.pdf`, createSimplePDF(lines), 'application/pdf');
+}
+
+
+function exportVCARD() {
+  const body = state.contacts.map(c => {
+    const name = (c.name || '').trim();
+    const org = c.company || '';
+    const title = c.role || '';
+    const note = [c.goal, c.priority ? `Priorität: ${c.priority}` : '', c.memory].filter(Boolean).join(' | ');
+    return ['BEGIN:VCARD','VERSION:3.0',`FN:${name}`,`ORG:${org}`,`TITLE:${title}`,`NOTE:${note}`,'END:VCARD'].join('\n');
+  }).join('\n');
+  downloadBlob(`networkee-contacts-${new Date().toISOString().slice(0,10)}.vcf`, body, 'text/vcard;charset=utf-8');
+}
+
+function buildRelationshipFeed(scored, dueNotes) {
+  const feed = [];
+  dueNotes.slice(0, 2).forEach(n => feed.push({ icon: '⏱️', title: `${contactName(n.contactId)} wartet auf ein Follow-up`, meta: n.nextStep || 'Heute nachfassen', contactId: n.contactId }));
+  scored.filter(x => x.days >= 60).slice(0, 2).forEach(x => feed.push({ icon: '🔥', title: `${x.contact.name} wird kalt`, meta: `${x.days} Tage kein dokumentierter Kontakt · ${x.contact.goal || 'Beziehung pflegen'}`, contactId: x.contact.id }));
+  state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 45) })).filter(x => x.diff !== null).slice(0, 2).forEach(x => feed.push({ icon: '🎂', title: `${x.c.name} hat ${x.diff === 0 ? 'heute' : 'bald'} Geburtstag`, meta: x.diff === 0 ? 'Heute persönlich melden' : `In ${x.diff} Tagen · persönlichen Anlass vorbereiten`, contactId: x.c.id }));
+  scored.filter(x => ['A+','A'].includes(x.score)).slice(0, 2).forEach(x => feed.push({ icon: '⭐', title: `${x.contact.name} ist stark gepflegt`, meta: `Score ${x.score} · Momentum halten`, contactId: x.contact.id }));
+  if (!feed.length) feed.push({ icon: '🧠', title: 'Networkee lernt dein Netzwerk kennen', meta: 'Erfasse Kontakte und Gespräche, damit der Feed smarter wird.', contactId: '' });
+  return feed.slice(0, 5);
+}
+
+function memoryChips(contact) {
+  const raw = [contact.goal, ...(contact.tags || []), ...(contact.memory || '').split(/[.,;|]/)].map(x => String(x || '').trim()).filter(Boolean);
+  const unique = [...new Set(raw)].slice(0, 6);
+  return unique.length ? unique : ['Noch keine Erinnerungen'];
 }
 
 function getContactNotes(contactId) {
@@ -385,7 +420,7 @@ function relationshipSignalCards(scored, dueNotes) {
     {
       cls: attention ? 'attention' : 'calm',
       icon: attention ? '⚠️' : '✅',
-      label: 'Aufmerksamkeit nötig',
+      label: 'Aufmerksamkeit',
       value: attention ? attention.contact.name : 'Alles stabil',
       sub: attention ? `${attention.days} Tage ruhig · Score ${attention.score}` : 'Keine Beziehung kühlt kritisch ab',
       action: attention ? recommendedAction(attention.contact) : 'Neue Gespräche erfassen'
@@ -393,7 +428,7 @@ function relationshipSignalCards(scored, dueNotes) {
     {
       cls: opportunity ? 'opportunity' : 'calm',
       icon: '🎯',
-      label: 'Opportunity',
+      label: 'Momentum',
       value: opportunity ? opportunity.contact.name : 'Keine offene Chance',
       sub: opportunity ? `Priorität ${opportunity.contact.priority || 'Medium'} · ${opportunity.contact.goal}` : 'Aktuell kein Handlungsfenster',
       action: opportunity ? opportunity.action : 'Kontaktziel setzen'
@@ -401,7 +436,7 @@ function relationshipSignalCards(scored, dueNotes) {
     {
       cls: birthday ? 'moment' : 'calm',
       icon: birthday ? '🎂' : '✨',
-      label: 'Persönlicher Moment',
+      label: 'Anlass',
       value: birthday ? birthday.c.name : 'Keiner',
       sub: birthday ? (birthday.diff === 0 ? 'Heute Geburtstag' : `Geburtstag in ${birthday.diff} Tagen`) : 'Keine Anlässe in 45 Tagen',
       action: birthday ? 'Persönliche Nachricht vorbereiten' : 'Geburtstage ergänzen'
@@ -409,7 +444,7 @@ function relationshipSignalCards(scored, dueNotes) {
     {
       cls: dueNotes.length ? 'attention' : 'calm',
       icon: dueNotes.length ? '⏱️' : '🧘',
-      label: 'Offene Follow-ups',
+      label: 'Follow-ups',
       value: String(dueNotes.length),
       sub: dueNotes.length ? 'Heute oder überfällig' : 'Nichts offen',
       action: dueNotes.length ? 'Heute erledigen' : 'Keine Aktion nötig'
@@ -429,6 +464,13 @@ function renderToday() {
   const assistant = strongestSignal(scored, dueNotes);
   document.getElementById('assistantHeadline').textContent = assistant.headline;
   document.getElementById('assistantCopy').textContent = assistant.copy;
+  const feedEl = document.getElementById('relationshipFeed');
+  feedEl.innerHTML = buildRelationshipFeed(scored, dueNotes).map(item => `
+    <article class="feed-item" ${item.contactId ? `onclick='openProfile("${item.contactId}")'` : ''}>
+      <span>${item.icon}</span>
+      <div><strong>${escapeHTML(item.title)}</strong><p>${escapeHTML(item.meta)}</p></div>
+    </article>
+  `).join('');
 
   const todayList = document.getElementById('todayList');
   const tasks = [
@@ -482,9 +524,9 @@ function renderContacts() {
           </div>
           <div class="score ${s.level}">${s.score}</div>
         </header>
-        <div class="tags">${(c.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}<span class="tag priority">${escapeHTML(c.priority || 'Medium')}</span></div>
+        <div class="tags"><span class="tag goal">${escapeHTML(c.goal || 'Beziehung pflegen')}</span><span class="tag priority">${escapeHTML(c.priority || 'Medium')}</span></div>
         <p class="human-line">${escapeHTML(memoryPreview(c))}</p>
-        <p class="memory">${escapeHTML(relationshipInsight(c))}</p>
+        <p class="memory"><strong>Nächste Aktion:</strong> ${escapeHTML(recommendedAction(c))}</p>
         <p class="meta">${s.days === Infinity ? 'Noch keine Timeline' : 'Letzter Kontakt vor ' + s.days + ' Tagen'} · ${notes.length} Moment(e)</p>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="small-btn" onclick='quickNote("${c.id}")'>Capture</button>
@@ -522,6 +564,10 @@ function openProfile(id) {
       <div><span>Priorität</span><strong>${escapeHTML(c.priority || 'Medium')}</strong></div>
       <div><span>Geburtstag</span><strong>${c.birthday ? formatDate(c.birthday) : '—'}</strong></div>
       <div><span>Interaktionen</span><strong>${notes.length}</strong></div>
+    </div>
+    <h3>Memory Hub</h3>
+    <div class="memory-hub">
+      ${memoryChips(c).map(m => `<span>${escapeHTML(m)}</span>`).join('')}
     </div>
     <h3>Wichtig zu merken</h3>
     <div class="memory-card"><p>${escapeHTML(c.memory || 'Noch keine persönliche Merkhilfe hinterlegt. Erfasse Interessen, gemeinsame Themen oder private Details, damit aus dem Kontakt eine echte Beziehungserinnerung wird.')}</p></div>
@@ -589,5 +635,5 @@ function formatDate(date) { return new Intl.DateTimeFormat('de-CH', { day: '2-di
 function escapeHTML(str) { return String(str || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
 function initials(name) { return String(name || '?').split(' ').filter(Boolean).slice(0,2).map(p => p[0]).join('').toUpperCase(); }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4.0').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5.0').catch(() => {});
 renderAll();
