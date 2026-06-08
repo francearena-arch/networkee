@@ -2,77 +2,75 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=1.2" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=1.2" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=1.2" />
+  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=2.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2.0" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=2.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=1.2" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="manifest" href="manifest.json?v=2.0" />
+  <link rel="stylesheet" href="styles.css?v=2.0" />
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div>
-        <p class="eyebrow">Personal CRM MVP</p>
+        <p class="eyebrow">The New Art of Relationship Management</p>
         <h1>Networkee</h1>
       </div>
       <button id="exportBtn" class="ghost-btn">Export</button>
     </header>
 
     <main>
-      <section id="dashboard" class="view active">
+      <section id="today" class="view active">
         <div class="hero-card">
           <div class="hero-brand">
-            <img src="networkee-icon.png?v=1.2" alt="Networkee Icon" class="hero-icon" />
+            <img src="networkee-icon.png?v=2.0" alt="Networkee Icon" class="hero-icon" />
             <div>
               <p class="eyebrow">Heute im Fokus</p>
-              <h2 id="focusTitle">Baue Beziehungen systematisch auf.</h2>
-              <p id="focusText">Erfasse Kontakte, notiere Gespräche und halte nächste Schritte fest.</p>
+              <h2>Beziehungen statt Kontakte verwalten.</h2>
+              <p>Networkee zeigt dir, wen du pflegen, erinnern oder wieder aktivieren solltest.</p>
             </div>
           </div>
         </div>
 
-        <div class="stats-grid">
-          <article class="stat-card">
-            <span id="contactCount">0</span>
-            <p>Kontakte</p>
-          </article>
-          <article class="stat-card">
-            <span id="noteCount">0</span>
-            <p>Interaktionen</p>
-          </article>
-          <article class="stat-card urgent">
-            <span id="dueCount">0</span>
-            <p>Fällige Follow-ups</p>
-          </article>
+        <div class="stats-grid compact">
+          <article class="stat-card"><span id="dueTodayCount">0</span><p>Heute fällig</p></article>
+          <article class="stat-card warning"><span id="atRiskCount">0</span><p>Gefährdet</p></article>
+          <article class="stat-card"><span id="topContactCount">0</span><p>Top-Kontakte</p></article>
         </div>
 
         <section class="panel">
           <div class="section-head">
-            <h3>Nächste Follow-ups</h3>
-            <button class="text-btn" data-nav="contacts">Alle Kontakte</button>
+            <h3>Heute erledigen</h3>
+            <button class="text-btn" data-nav="capture">+ Erfassen</button>
           </div>
-          <div id="followupList" class="list empty-state">Noch keine Follow-ups vorhanden.</div>
+          <div id="todayList" class="list empty-state">Keine dringenden Beziehungspunkte für heute.</div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head"><h3>Relationship Signals</h3></div>
+          <div id="signalList" class="signal-grid"></div>
         </section>
       </section>
 
-      <section id="contacts" class="view">
+      <section id="network" class="view">
         <div class="section-head sticky-head">
-          <h2>Kontakte</h2>
-          <button id="addContactBtn" class="primary-btn">+ Kontakt</button>
+          <h2>Network</h2>
+          <button id="addContactBtn" class="primary-btn">+ Person</button>
         </div>
-        <input id="searchInput" class="search" placeholder="Kontakt, Firma, Tag suchen …" />
+        <input id="searchInput" class="search" placeholder="Person, Firma, Tag, Kontext suchen …" />
         <div id="contactList" class="contact-list"></div>
       </section>
 
       <section id="capture" class="view">
-        <div class="section-head">
-          <h2>Interaktion erfassen</h2>
+        <div class="section-head"><h2>Capture</h2></div>
+        <div class="voice-card">
+          <button id="voiceNoteBtn" class="voice-btn" type="button">🎙️ Voice Note</button>
+          <p>Noch ohne KI: Der Button simuliert den späteren Kern-Flow für Sprachmemos nach Meetings.</p>
         </div>
         <form id="noteForm" class="form-card">
-          <label>Kontakt
+          <label>Person
             <select id="noteContact" required></select>
           </label>
           <label>Art der Interaktion
@@ -81,10 +79,11 @@
               <option>Call</option>
               <option>Nachricht</option>
               <option>Zufälliges Gespräch</option>
+              <option>Voice Note</option>
             </select>
           </label>
           <label>Notiz / Gesprächszusammenfassung
-            <textarea id="noteText" rows="6" placeholder="Was wurde besprochen? Interessen, Pain Points, nächste Schritte …" required></textarea>
+            <textarea id="noteText" rows="6" placeholder="Was wurde besprochen? Interessen, private Details, Chancen, nächste Schritte …" required></textarea>
           </label>
           <label>Nächster Schritt
             <input id="nextStep" placeholder="z. B. In 2 Wochen nachfragen" />
@@ -92,53 +91,59 @@
           <label>Follow-up Datum
             <input id="followupDate" type="date" />
           </label>
-          <button class="primary-btn" type="submit">Interaktion speichern</button>
+          <button class="primary-btn full" type="submit">Interaktion speichern</button>
         </form>
       </section>
 
       <section id="insights" class="view">
-        <div class="section-head">
-          <h2>Relationship Insights</h2>
-        </div>
+        <div class="section-head"><h2>Insights</h2></div>
         <div id="insightList" class="list empty-state">Noch keine Insights vorhanden.</div>
+      </section>
+
+      <section id="settings" class="view">
+        <div class="section-head"><h2>Settings</h2></div>
+        <section class="panel">
+          <h3>Datenspeicherung</h3>
+          <p class="muted">Dieses MVP speichert Daten lokal im Browser. Noch kein Login, kein Backend und keine Synchronisierung.</p>
+          <div class="settings-actions">
+            <button id="resetDemoBtn" class="ghost-btn">Demo-Daten zurücksetzen</button>
+            <button id="clearDataBtn" class="danger-btn">Alle Daten löschen</button>
+          </div>
+        </section>
       </section>
     </main>
 
     <nav class="bottom-nav">
-      <button class="nav-btn active" data-nav="dashboard">Dashboard</button>
-      <button class="nav-btn" data-nav="contacts">Kontakte</button>
-      <button class="nav-btn" data-nav="capture">Erfassen</button>
+      <button class="nav-btn active" data-nav="today">Today</button>
+      <button class="nav-btn" data-nav="network">Network</button>
+      <button class="nav-btn capture" data-nav="capture">Capture</button>
       <button class="nav-btn" data-nav="insights">Insights</button>
+      <button class="nav-btn" data-nav="settings">Settings</button>
     </nav>
   </div>
 
   <dialog id="contactDialog">
     <form id="contactForm" method="dialog" class="dialog-card">
-      <h2 id="dialogTitle">Kontakt hinzufügen</h2>
+      <h2 id="dialogTitle">Person hinzufügen</h2>
       <input type="hidden" id="contactId" />
-      <label>Name
-        <input id="contactName" required placeholder="z. B. Angela Arena" />
+      <label>Name<input id="contactName" required placeholder="z. B. Peter Streiff" /></label>
+      <label>Rolle / Kontext<input id="contactRole" placeholder="z. B. Sales Mentor" /></label>
+      <label>Firma<input id="contactCompany" placeholder="z. B. Nexi" /></label>
+      <label>Tags<input id="contactTags" placeholder="Sales, Mentor, Netzwerk" /></label>
+      <label>Priorität
+        <select id="contactPriority"><option>High</option><option selected>Medium</option><option>Low</option></select>
       </label>
-      <label>Rolle / Kontext
-        <input id="contactRole" placeholder="z. B. Assistentin Geschäftsleitung" />
-      </label>
-      <label>Firma
-        <input id="contactCompany" placeholder="z. B. Nexi" />
-      </label>
-      <label>Tags
-        <input id="contactTags" placeholder="Sales, Mentor, Netzwerk" />
-      </label>
+      <label>Geburtstag<input id="contactBirthday" type="date" /></label>
       <label>Beziehungsziel
         <select id="relationshipGoal">
           <option>Kontakt warm halten</option>
           <option>Geschäftschance entwickeln</option>
           <option>Mentoring / Karriere</option>
           <option>Privater Kontakt</option>
+          <option>Strategischer Netzwerk-Kontakt</option>
         </select>
       </label>
-      <label>Wichtig zu merken
-        <textarea id="contactMemory" rows="4" placeholder="Persönliche Details, Interessen, letzte Themen …"></textarea>
-      </label>
+      <label>Wichtig zu merken<textarea id="contactMemory" rows="4" placeholder="Persönliche Details, Interessen, letzte Themen …"></textarea></label>
       <div class="dialog-actions">
         <button type="button" id="cancelDialog" class="ghost-btn">Abbrechen</button>
         <button type="submit" class="primary-btn">Speichern</button>
@@ -146,6 +151,15 @@
     </form>
   </dialog>
 
-  <script src="app.js"></script>
+  <dialog id="profileDialog">
+    <article class="dialog-card profile-card">
+      <div id="profileContent"></div>
+      <div class="dialog-actions">
+        <button type="button" id="closeProfile" class="ghost-btn">Schliessen</button>
+      </div>
+    </article>
+  </dialog>
+
+  <script src="app.js?v=2.0"></script>
 </body>
 </html>
