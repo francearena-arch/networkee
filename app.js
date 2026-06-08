@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'networkee_mvp_v3';
-const LEGACY_KEYS = ['networkee_mvp_v2', 'networkee_mvp_v1'];
+const STORAGE_KEY = 'networkee_mvp_v4';
+const LEGACY_KEYS = ['networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
 
 function daysAgo(days) {
   const d = new Date();
@@ -173,15 +173,99 @@ document.getElementById('noteForm').addEventListener('submit', (event) => {
   navTo('today');
 });
 
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+document.getElementById('exportBtn').addEventListener('click', () => { closeMenu(); document.getElementById('exportDialog').showModal(); });
+document.getElementById('closeExport').addEventListener('click', () => document.getElementById('exportDialog').close());
+document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+document.getElementById('exportPdfBtn').addEventListener('click', exportPDF);
+
+function downloadBlob(filename, content, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `networkee-export-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
-});
+}
+
+function exportJSON() {
+  downloadBlob(`networkee-export-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(state, null, 2), 'application/json');
+}
+
+function csvEscape(value) {
+  return `"${String(value ?? '').replaceAll('"', '""')}"`;
+}
+
+function exportCSV() {
+  const contactRows = [['id','name','role','company','tags','priority','goal','birthday','memory','relationship_score','last_contact_days','created_at']];
+  state.contacts.forEach(c => {
+    const s = scoreFor(c);
+    contactRows.push([c.id,c.name,c.role,c.company,(c.tags || []).join('|'),c.priority,c.goal,c.birthday,c.memory,s.score,s.days === Infinity ? '' : s.days,c.createdAt]);
+  });
+  const noteRows = [['id','contact_id','contact_name','type','text','next_step','followup_date','created_at']];
+  state.notes.forEach(n => noteRows.push([n.id,n.contactId,contactName(n.contactId),n.type,n.text,n.nextStep,n.followupDate,n.createdAt]));
+  const contactsCsv = contactRows.map(r => r.map(csvEscape).join(',')).join('\n');
+  const notesCsv = noteRows.map(r => r.map(csvEscape).join(',')).join('\n');
+  const date = new Date().toISOString().slice(0,10);
+  downloadBlob(`networkee-contacts-${date}.csv`, contactsCsv, 'text/csv;charset=utf-8');
+  setTimeout(() => downloadBlob(`networkee-interactions-${date}.csv`, notesCsv, 'text/csv;charset=utf-8'), 300);
+}
+
+function pdfEscape(text) {
+  return String(text ?? '').replace(/[\\()]/g, m => '\\' + m).replace(/[\r\n]+/g, ' ');
+}
+
+
+function createSimplePDF(lines) {
+  const objects = [];
+  const add = obj => { objects.push(obj); return objects.length; };
+  const font = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  const titleFont = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
+  let content = 'BT\n';
+  let y = 800;
+  lines.forEach(line => {
+    if (y < 60) return;
+    const size = line.title ? 18 : 11;
+    const f = line.title ? 'F2' : 'F1';
+    content += `/${f} ${size} Tf 50 ${y} Td (${pdfEscape(line.text).slice(0,95)}) Tj\n`;
+    y -= line.title ? 28 : 17;
+  });
+  content += 'ET';
+  const stream = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  const pages = add('<< /Type /Pages /Kids [5 0 R] /Count 1 >>');
+  const page = add(`<< /Type /Page /Parent ${pages} 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${font} 0 R /F2 ${titleFont} 0 R >> >> /Contents ${stream} 0 R >>`);
+  objects[pages-1] = `<< /Type /Pages /Kids [${page} 0 R] /Count 1 >>`;
+  const catalog = add(`<< /Type /Catalog /Pages ${pages} 0 R >>`);
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((obj, i) => { offsets.push(pdf.length); pdf += `${i+1} 0 obj\n${obj}\nendobj\n`; });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach(o => pdf += String(o).padStart(10,'0') + ' 00000 n \n');
+  pdf += `trailer << /Size ${objects.length+1} /Root ${catalog} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([pdf], { type: 'application/pdf' });
+}
+
+function exportPDF() {
+  const scored = state.contacts.map(c => ({ c, ...scoreFor(c) })).sort((a,b) => b.days - a.days);
+  const due = state.notes.filter(isDue);
+  const lines = [
+    { title: true, text: 'Networkee Relationship Report' },
+    { text: `Export: ${new Date().toLocaleDateString('de-CH')}` },
+    { text: `Kontakte: ${state.contacts.length} | Interaktionen: ${state.notes.length} | Offene Follow-ups: ${due.length}` },
+    { title: true, text: 'Relationship Signals' },
+    ...relationshipSignalCards(scored, due).map(s => ({ text: `${s.label}: ${s.value} | ${s.sub} | Aktion: ${s.action}` })),
+    { title: true, text: 'Kontakte' },
+    ...scored.flatMap(({ c, score, days }) => ([
+      { text: `${c.name} (${score}) - ${c.goal || 'kein Ziel'} - letzter Kontakt: ${days === Infinity ? 'keiner' : days + ' Tage'}` },
+      { text: `Merken: ${c.memory || '-'}` }
+    ]))
+  ];
+  downloadBlob(`networkee-report-${new Date().toISOString().slice(0,10)}.pdf`, createSimplePDF(lines), 'application/pdf');
+}
 
 function getContactNotes(contactId) {
   return state.notes
@@ -270,8 +354,8 @@ function birthdayWithinDays(contact, daysAhead = 30) {
 
 function strongestSignal(scored, dueNotes) {
   const atRiskHigh = scored.filter(x => ['C', 'D', 'B'].includes(x.score) && x.contact.priority === 'High').sort((a,b) => b.days - a.days)[0];
-  if (dueNotes.length) return { headline: `${dueNotes.length} Follow-up${dueNotes.length > 1 ? 's' : ''} wartet`, copy: 'Heute ist ein guter Zeitpunkt, um aktiv nachzufassen und Momentum zu sichern.' };
-  if (atRiskHigh) return { headline: `${atRiskHigh.contact.name} braucht Aufmerksamkeit`, copy: `Priorität High, letzter dokumentierter Kontakt vor ${atRiskHigh.days} Tagen.` };
+  if (dueNotes.length) return { headline: `Heute solltest du ${contactName(dueNotes[0].contactId)} kontaktieren.`, copy: `${dueNotes.length} Follow-up${dueNotes.length > 1 ? 's' : ''} wartet. Networkee empfiehlt: nachfassen, bevor Momentum verloren geht.` };
+  if (atRiskHigh) return { headline: `${atRiskHigh.contact.name} braucht Aufmerksamkeit.`, copy: `Priorität High · ${atRiskHigh.days} Tage kein dokumentierter Kontakt · jetzt persönlichen Check-in setzen.` };
   const birthday = state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 30) })).filter(x => x.diff !== null).sort((a,b) => a.diff - b.diff)[0];
   if (birthday) return { headline: `Baldiger Anlass: ${birthday.c.name}`, copy: birthday.diff === 0 ? 'Heute Geburtstag. Persönliche Nachricht senden.' : `Geburtstag in ${birthday.diff} Tagen. Merke dir einen persönlichen Kontaktpunkt.` };
   return { headline: 'Heute ist dein Netzwerk stabil.', copy: 'Erfasse neue Gespräche, damit Networkee feinere Beziehungssignale erkennt.' };
@@ -283,31 +367,56 @@ function memoryPreview(contact) {
   return 'Noch keine persönliche Merkhilfe hinterlegt.';
 }
 
+function opportunitySignal(scored) {
+  const highDue = scored.filter(x => x.contact.priority === 'High' && x.days >= 30).sort((a,b) => b.days - a.days)[0];
+  if (highDue) return { contact: highDue.contact, days: highDue.days, action: recommendedAction(highDue.contact) };
+  const next = state.contacts.map(c => ({ contact: c, note: lastInteraction(c) })).filter(x => x.note?.nextStep).sort((a,b) => new Date(b.note.createdAt) - new Date(a.note.createdAt))[0];
+  return next ? { contact: next.contact, days: scoreFor(next.contact).days, action: next.note.nextStep } : null;
+}
+
 function relationshipSignalCards(scored, dueNotes) {
-  const atRisk = scored.filter(x => ['B', 'C', 'D'].includes(x.score)).sort((a,b) => b.days - a.days)[0];
-  const birthday = state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 30) })).filter(x => x.diff !== null).sort((a,b) => a.diff - b.diff)[0];
-  const staleHigh = scored.filter(x => x.contact.priority === 'High' && x.days > 45).sort((a,b) => b.days - a.days)[0];
+  const attention = scored.filter(x => ['B', 'C', 'D'].includes(x.score)).sort((a,b) => {
+    const prio = { High: 3, Medium: 2, Low: 1 };
+    return (prio[b.contact.priority] - prio[a.contact.priority]) || (b.days - a.days);
+  })[0];
+  const opportunity = opportunitySignal(scored);
+  const birthday = state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 45) })).filter(x => x.diff !== null).sort((a,b) => a.diff - b.diff)[0];
   return [
     {
-      cls: atRisk ? 'alert' : 'ok',
-      label: 'Abkühlender Kontakt',
-      value: atRisk ? atRisk.contact.name : 'Keiner',
-      sub: atRisk ? `Seit ${atRisk.days} Tagen ruhig · Score ${atRisk.score}` : 'Aktuell stabil'
+      cls: attention ? 'attention' : 'calm',
+      icon: attention ? '⚠️' : '✅',
+      label: 'Aufmerksamkeit nötig',
+      value: attention ? attention.contact.name : 'Alles stabil',
+      sub: attention ? `${attention.days} Tage ruhig · Score ${attention.score}` : 'Keine Beziehung kühlt kritisch ab',
+      action: attention ? recommendedAction(attention.contact) : 'Neue Gespräche erfassen'
     },
     {
-      cls: birthday ? 'action' : '',
-      label: 'Persönlicher Anlass',
+      cls: opportunity ? 'opportunity' : 'calm',
+      icon: '🎯',
+      label: 'Opportunity',
+      value: opportunity ? opportunity.contact.name : 'Keine offene Chance',
+      sub: opportunity ? `Priorität ${opportunity.contact.priority || 'Medium'} · ${opportunity.contact.goal}` : 'Aktuell kein Handlungsfenster',
+      action: opportunity ? opportunity.action : 'Kontaktziel setzen'
+    },
+    {
+      cls: birthday ? 'moment' : 'calm',
+      icon: birthday ? '🎂' : '✨',
+      label: 'Persönlicher Moment',
       value: birthday ? birthday.c.name : 'Keiner',
-      sub: birthday ? (birthday.diff === 0 ? 'Heute Geburtstag' : `Geburtstag in ${birthday.diff} Tagen`) : 'Keine Anlässe in 30 Tagen'
+      sub: birthday ? (birthday.diff === 0 ? 'Heute Geburtstag' : `Geburtstag in ${birthday.diff} Tagen`) : 'Keine Anlässe in 45 Tagen',
+      action: birthday ? 'Persönliche Nachricht vorbereiten' : 'Geburtstage ergänzen'
     },
     {
-      cls: dueNotes.length ? 'alert' : (staleHigh ? 'action' : 'ok'),
+      cls: dueNotes.length ? 'attention' : 'calm',
+      icon: dueNotes.length ? '⏱️' : '🧘',
       label: 'Offene Follow-ups',
       value: String(dueNotes.length),
-      sub: dueNotes.length ? 'Heute oder überfällig' : (staleHigh ? `${staleHigh.contact.name} aktivieren` : 'Nichts offen')
+      sub: dueNotes.length ? 'Heute oder überfällig' : 'Nichts offen',
+      action: dueNotes.length ? 'Heute erledigen' : 'Keine Aktion nötig'
     }
   ];
 }
+
 
 function renderToday() {
   const dueNotes = state.notes.filter(isDue);
@@ -346,7 +455,7 @@ function renderToday() {
     signalList.innerHTML = '<p class="empty-state">Erfasse zuerst Personen in deinem Netzwerk.</p>';
   } else {
     signalList.innerHTML = relationshipSignalCards(scored, dueNotes)
-      .map(s => `<article class="signal-card ${s.cls}"><p>${s.label}</p><h3>${escapeHTML(s.value)}</h3><span>${escapeHTML(s.sub)}</span></article>`).join('');
+      .map(s => `<article class="signal-card ${s.cls}"><div class="signal-top"><span class="signal-icon">${s.icon}</span><p>${s.label}</p></div><h3>${escapeHTML(s.value)}</h3><span>${escapeHTML(s.sub)}</span><strong>${escapeHTML(s.action)}</strong></article>`).join('');
   }
 }
 
@@ -480,5 +589,5 @@ function formatDate(date) { return new Intl.DateTimeFormat('de-CH', { day: '2-di
 function escapeHTML(str) { return String(str || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
 function initials(name) { return String(name || '?').split(' ').filter(Boolean).slice(0,2).map(p => p[0]).join('').toUpperCase(); }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.0').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=4.0').catch(() => {});
 renderAll();

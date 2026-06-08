@@ -1,17 +1,15 @@
-# Networkee MVP v2
+# Networkee MVP v4
 
-Erste produktstrategische Iteration des Networkee-Web-/PWA-Prototyps.
+Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS.
 
-## Neue Schwerpunkte
+## Neu in v4
 
-- Navigationstest: Today, Network, Capture, Insights, Settings
-- Relationship Health Score pro Kontakt: A+, A, B, C, D
-- Kontaktprofil mit Merkhilfe, Priorität, Geburtstag und Timeline
-- Smart Dashboard mit fälligen Follow-ups, gefährdeten Beziehungen und Relationship Signals
-- Relationship Insights mit konkreter Handlungsempfehlung
-- Voice Note Placeholder als Vorbereitung für spätere KI-Transkription
+- Relationship Signals als echte Handlungssignale
+- Export Center mit JSON, CSV und PDF
+- Smart Assistant auf der Startseite geschärft
+- Kontaktkarten und Relationship Memory weiter emotionalisiert
+- Mobile Frontend und Bottom-Navigation weiter optimiert
 
-## Einschränkungen
+## Start lokal
 
-- Lokale Speicherung via localStorage
-- Noch kein Backend, Login, Sync, KI, Kalenderintegration oder Paygate
+`index.html` im Browser öffnen.

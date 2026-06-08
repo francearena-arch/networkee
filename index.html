@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=3.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3.0" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=3.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=4.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=4.0" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=4.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=3.0" />
-  <link rel="stylesheet" href="styles.css?v=3.0" />
+  <link rel="manifest" href="manifest.json?v=4.0" />
+  <link rel="stylesheet" href="styles.css?v=4.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -26,7 +26,7 @@
     <aside id="sideMenu" class="side-menu" aria-hidden="true">
       <div class="menu-panel">
         <div class="menu-head">
-          <img src="networkee-icon.png?v=3.0" alt="Networkee Icon" />
+          <img src="networkee-icon.png?v=4.0" alt="Networkee Icon" />
           <div>
             <strong>Networkee</strong>
             <p>Relationship OS</p>
@@ -38,7 +38,7 @@
         <button class="menu-item" data-nav="capture">Capture <span>Gespräche festhalten</span></button>
         <button class="menu-item" data-nav="insights">Insights <span>Signale & Empfehlungen</span></button>
         <button class="menu-item" data-nav="settings">Settings <span>Daten & Demo</span></button>
-        <button id="exportBtn" class="menu-item secondary">Export <span>Lokale Daten als JSON sichern</span></button>
+        <button id="exportBtn" class="menu-item secondary">Export Center <span>JSON, CSV oder PDF sichern</span></button>
       </div>
     </aside>
 
@@ -46,7 +46,7 @@
       <section id="today" class="view active">
         <div class="hero-card emotional">
           <div class="hero-brand">
-            <img src="networkee-icon.png?v=3.0" alt="Networkee Icon" class="hero-icon" />
+            <img src="networkee-icon.png?v=4.0" alt="Networkee Icon" class="hero-icon" />
             <div>
               <p class="eyebrow">Heute im Fokus</p>
               <h2>Dein Netzwerk erinnert sich nicht von selbst.</h2>
@@ -187,6 +187,22 @@
     </article>
   </dialog>
 
-  <script src="app.js?v=3.0"></script>
+
+  <dialog id="exportDialog">
+    <article class="dialog-card export-card">
+      <h2>Export Center</h2>
+      <p class="muted">Sichere deine lokalen Networkee-Daten im gewünschten Format.</p>
+      <div class="export-options">
+        <button id="exportJsonBtn" class="export-option" type="button"><strong>JSON</strong><span>Vollständiges Backup für spätere Migration</span></button>
+        <button id="exportCsvBtn" class="export-option" type="button"><strong>CSV</strong><span>Kontakte und Interaktionen als Tabellen</span></button>
+        <button id="exportPdfBtn" class="export-option" type="button"><strong>PDF</strong><span>Relationship Report als lesbares Dokument</span></button>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" id="closeExport" class="ghost-btn">Schliessen</button>
+      </div>
+    </article>
+  </dialog>
+
+  <script src="app.js?v=4.0"></script>
 </body>
 </html>
