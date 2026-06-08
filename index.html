@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=5.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=5.0" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=5.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=7.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=7.0" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=7.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=5.0" />
-  <link rel="stylesheet" href="styles.css?v=5.0" />
+  <link rel="manifest" href="manifest.json?v=7.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQz50tXTknaMr5XsV3E0hA+NZpGAaGs=" crossorigin="" />
+  <link rel="stylesheet" href="styles.css?v=7.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -26,7 +27,7 @@
     <aside id="sideMenu" class="side-menu" aria-hidden="true">
       <div class="menu-panel">
         <div class="menu-head">
-          <img src="networkee-icon.png?v=5.0" alt="Networkee Icon" />
+          <img src="networkee-icon.png?v=7.0" alt="Networkee Icon" />
           <div>
             <strong>Networkee</strong>
             <p>Relationship OS</p>
@@ -37,10 +38,12 @@
         <button class="menu-item" data-nav="network">Network <span>Menschen & Beziehungen</span></button>
         <button class="menu-item" data-nav="capture">Capture <span>Gespräche festhalten</span></button>
         <button class="menu-item" data-nav="insights">Insights <span>Signale & Empfehlungen</span></button>
+        <button class="menu-item" data-nav="map">Map <span>Geografische Netzwerkübersicht</span></button>
         <button class="menu-item" data-nav="settings">Settings <span>Daten & Demo</span></button>
         <div class="menu-divider"></div>
         <button id="shareQrBtn" class="menu-item secondary">QR teilen <span>Digitaler Networkee-Code</span></button>
         <button id="scanQrBtn" class="menu-item secondary">QR scannen <span>Kontakt oder Visitenkarte erfassen</span></button>
+        <button class="menu-item secondary" data-nav="map">Network Map <span>Cluster nach Ort und Land</span></button>
         <button id="importBtn" class="menu-item secondary">Import <span>Kontakte später synchronisieren</span></button>
         <button id="exportBtn" class="menu-item secondary">Export Hub <span>JSON, CSV, PDF oder vCard</span></button>
         <button id="helpBtn" class="menu-item secondary">Hilfe <span>Quick Tour & Support</span></button>
@@ -51,7 +54,7 @@
       <section id="today" class="view active">
         <div class="hero-card emotional">
           <div class="hero-brand">
-            <img src="networkee-icon.png?v=5.0" alt="Networkee Icon" class="hero-icon" />
+            <img src="networkee-icon.png?v=7.0" alt="Networkee Icon" class="hero-icon" />
             <div>
               <p class="eyebrow">Heute im Fokus</p>
               <h2>Dein Netzwerk erinnert sich nicht von selbst.</h2>
@@ -144,6 +147,11 @@
         <div id="insightList" class="list empty-state">Noch keine Insights vorhanden.</div>
       </section>
 
+      <section id="map" class="view">
+        <div class="section-head"><h2>Network Map</h2><button class="text-btn" data-nav="network">Kontakte</button></div>
+        <div id="mapRoot"></div>
+      </section>
+
       <section id="settings" class="view">
         <div class="section-head"><h2>Settings</h2></div>
         <section class="panel">
@@ -162,7 +170,7 @@
       <button class="nav-btn" data-nav="network">Network</button>
       <button class="nav-btn capture" data-nav="capture">Capture</button>
       <button class="nav-btn" data-nav="insights">Insights</button>
-      <button class="nav-btn" data-nav="settings">Settings</button>
+      <button class="nav-btn" data-nav="map">Map</button>
     </nav>
   </div>
 
@@ -173,6 +181,16 @@
       <label>Name<input id="contactName" required placeholder="z. B. Peter Streiff" /></label>
       <label>Rolle / Kontext<input id="contactRole" placeholder="z. B. Sales Mentor" /></label>
       <label>Firma<input id="contactCompany" placeholder="z. B. Nexi" /></label>
+      <div class="form-row">
+        <label>Wohnort<input id="contactCity" placeholder="z. B. Zürich" /></label>
+        <label>Region<input id="contactRegion" placeholder="z. B. Zürich" /></label>
+      </div>
+      <label>Land<input id="contactCountry" placeholder="z. B. Schweiz" /></label>
+      <div class="form-row">
+        <label>Latitude optional<input id="contactLat" inputmode="decimal" placeholder="z. B. 47.3769" /></label>
+        <label>Longitude optional<input id="contactLng" inputmode="decimal" placeholder="z. B. 8.5417" /></label>
+      </div>
+      <p class="form-hint">Koordinaten werden automatisch für häufige Städte erkannt. Für exakte Pins kannst du sie manuell ergänzen.</p>
       <label>Tags<input id="contactTags" placeholder="Sales, Mentor, Netzwerk" /></label>
       <label>Priorität
         <select id="contactPriority"><option>High</option><option selected>Medium</option><option>Low</option></select>
@@ -221,6 +239,7 @@
     </article>
   </dialog>
 
-  <script src="app.js?v=5.0"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js?v=7.0"></script>
 </body>
 </html>
