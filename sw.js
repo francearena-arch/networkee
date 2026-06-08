@@ -1,7 +1,7 @@
-const CACHE_NAME = 'networkee-v2-cache';
+const CACHE_NAME = 'networkee-v3-cache';
 const ASSETS = [
-  './', './index.html?v=2.0', './styles.css?v=2.0', './app.js?v=2.0', './manifest.json?v=2.0',
-  './networkee-icon.png?v=2.0', './networkee-app-icon-192.png?v=2.0', './networkee-app-icon-512.png?v=2.0', './networkee-apple-touch-icon.png?v=2.0'
+  './', './index.html?v=3.0', './styles.css?v=3.0', './app.js?v=3.0', './manifest.json?v=3.0',
+  './networkee-icon.png?v=3.0', './networkee-app-icon-192.png?v=3.0', './networkee-app-icon-512.png?v=3.0', './networkee-apple-touch-icon.png?v=3.0'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

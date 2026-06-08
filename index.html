@@ -2,14 +2,14 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=2.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2.0" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=2.0" />
+  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=3.0" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3.0" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=3.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=2.0" />
-  <link rel="stylesheet" href="styles.css?v=2.0" />
+  <link rel="manifest" href="manifest.json?v=3.0" />
+  <link rel="stylesheet" href="styles.css?v=3.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -18,21 +18,48 @@
         <p class="eyebrow">The New Art of Relationship Management</p>
         <h1>Networkee</h1>
       </div>
-      <button id="exportBtn" class="ghost-btn">Export</button>
+      <button id="menuBtn" class="menu-btn" aria-label="Menü öffnen" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </header>
+
+    <aside id="sideMenu" class="side-menu" aria-hidden="true">
+      <div class="menu-panel">
+        <div class="menu-head">
+          <img src="networkee-icon.png?v=3.0" alt="Networkee Icon" />
+          <div>
+            <strong>Networkee</strong>
+            <p>Relationship OS</p>
+          </div>
+          <button id="closeMenuBtn" class="close-btn" aria-label="Menü schliessen">×</button>
+        </div>
+        <button class="menu-item" data-nav="today">Today <span>Was jetzt zählt</span></button>
+        <button class="menu-item" data-nav="network">Network <span>Menschen & Beziehungen</span></button>
+        <button class="menu-item" data-nav="capture">Capture <span>Gespräche festhalten</span></button>
+        <button class="menu-item" data-nav="insights">Insights <span>Signale & Empfehlungen</span></button>
+        <button class="menu-item" data-nav="settings">Settings <span>Daten & Demo</span></button>
+        <button id="exportBtn" class="menu-item secondary">Export <span>Lokale Daten als JSON sichern</span></button>
+      </div>
+    </aside>
 
     <main>
       <section id="today" class="view active">
-        <div class="hero-card">
+        <div class="hero-card emotional">
           <div class="hero-brand">
-            <img src="networkee-icon.png?v=2.0" alt="Networkee Icon" class="hero-icon" />
+            <img src="networkee-icon.png?v=3.0" alt="Networkee Icon" class="hero-icon" />
             <div>
               <p class="eyebrow">Heute im Fokus</p>
-              <h2>Beziehungen statt Kontakte verwalten.</h2>
-              <p>Networkee zeigt dir, wen du pflegen, erinnern oder wieder aktivieren solltest.</p>
+              <h2>Dein Netzwerk erinnert sich nicht von selbst.</h2>
+              <p>Networkee zeigt dir, welche Beziehung heute Aufmerksamkeit verdient – bevor Kontakte kalt werden.</p>
             </div>
           </div>
         </div>
+
+        <section class="assistant-card">
+          <p class="eyebrow">Networkee Assistant</p>
+          <h3 id="assistantHeadline">Heute ist dein Netzwerk stabil.</h3>
+          <p id="assistantCopy">Erfasse weitere Interaktionen, damit Networkee bessere Signale erkennt.</p>
+        </section>
 
         <div class="stats-grid compact">
           <article class="stat-card"><span id="dueTodayCount">0</span><p>Heute fällig</p></article>
@@ -67,7 +94,7 @@
         <div class="section-head"><h2>Capture</h2></div>
         <div class="voice-card">
           <button id="voiceNoteBtn" class="voice-btn" type="button">🎙️ Voice Note</button>
-          <p>Noch ohne KI: Der Button simuliert den späteren Kern-Flow für Sprachmemos nach Meetings.</p>
+          <p>Später wird daraus der schnellste Flow: sprechen, verdichten, erinnern lassen.</p>
         </div>
         <form id="noteForm" class="form-card">
           <label>Person
@@ -160,6 +187,6 @@
     </article>
   </dialog>
 
-  <script src="app.js?v=2.0"></script>
+  <script src="app.js?v=3.0"></script>
 </body>
 </html>

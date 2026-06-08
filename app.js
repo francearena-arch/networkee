@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'networkee_mvp_v2';
-const LEGACY_KEY = 'networkee_mvp_v1';
+const STORAGE_KEY = 'networkee_mvp_v3';
+const LEGACY_KEYS = ['networkee_mvp_v2', 'networkee_mvp_v1'];
 
 function daysAgo(days) {
   const d = new Date();
@@ -53,15 +53,17 @@ function loadState() {
   if (stored) {
     try { return normalizeState(JSON.parse(stored)); } catch { return seedData; }
   }
-  const legacy = localStorage.getItem(LEGACY_KEY);
-  if (legacy) {
-    try {
-      const migrated = normalizeState(JSON.parse(legacy));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-      return migrated;
-    } catch { return seedData; }
+  for (const key of LEGACY_KEYS) {
+    const legacy = localStorage.getItem(key);
+    if (legacy) {
+      try {
+        const migrated = normalizeState(JSON.parse(legacy));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        return migrated;
+      } catch { /* continue */ }
+    }
   }
-  return seedData;
+  return structuredClone(seedData);
 }
 
 function normalizeState(data) {
@@ -84,11 +86,29 @@ function saveState() {
 function navTo(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === viewId));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === viewId));
+  closeMenu();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openMenu() {
+  const menu = document.getElementById('sideMenu');
+  menu.classList.add('open');
+  menu.setAttribute('aria-hidden', 'false');
+  document.getElementById('menuBtn').setAttribute('aria-expanded', 'true');
+}
+
+function closeMenu() {
+  const menu = document.getElementById('sideMenu');
+  menu.classList.remove('open');
+  menu.setAttribute('aria-hidden', 'true');
+  document.getElementById('menuBtn').setAttribute('aria-expanded', 'false');
 }
 
 document.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => navTo(btn.dataset.nav)));
 document.getElementById('addContactBtn').addEventListener('click', () => openContactDialog());
+document.getElementById('menuBtn').addEventListener('click', openMenu);
+document.getElementById('closeMenuBtn').addEventListener('click', closeMenu);
+document.getElementById('sideMenu').addEventListener('click', (event) => { if (event.target.id === 'sideMenu') closeMenu(); });
 document.getElementById('cancelDialog').addEventListener('click', () => document.getElementById('contactDialog').close());
 document.getElementById('closeProfile').addEventListener('click', () => document.getElementById('profileDialog').close());
 document.getElementById('searchInput').addEventListener('input', renderContacts);
@@ -237,6 +257,58 @@ function deleteContact(id) {
 
 function contactName(id) { return state.contacts.find(c => c.id === id)?.name || 'Unbekannte Person'; }
 
+
+function birthdayWithinDays(contact, daysAhead = 30) {
+  if (!contact.birthday) return null;
+  const now = new Date();
+  const [year, month, day] = contact.birthday.split('-').map(Number);
+  const next = new Date(now.getFullYear(), month - 1, day);
+  if (next < new Date(now.toDateString())) next.setFullYear(now.getFullYear() + 1);
+  const diff = Math.ceil((next - now) / (1000 * 60 * 60 * 24));
+  return diff <= daysAhead ? diff : null;
+}
+
+function strongestSignal(scored, dueNotes) {
+  const atRiskHigh = scored.filter(x => ['C', 'D', 'B'].includes(x.score) && x.contact.priority === 'High').sort((a,b) => b.days - a.days)[0];
+  if (dueNotes.length) return { headline: `${dueNotes.length} Follow-up${dueNotes.length > 1 ? 's' : ''} wartet`, copy: 'Heute ist ein guter Zeitpunkt, um aktiv nachzufassen und Momentum zu sichern.' };
+  if (atRiskHigh) return { headline: `${atRiskHigh.contact.name} braucht Aufmerksamkeit`, copy: `Priorität High, letzter dokumentierter Kontakt vor ${atRiskHigh.days} Tagen.` };
+  const birthday = state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 30) })).filter(x => x.diff !== null).sort((a,b) => a.diff - b.diff)[0];
+  if (birthday) return { headline: `Baldiger Anlass: ${birthday.c.name}`, copy: birthday.diff === 0 ? 'Heute Geburtstag. Persönliche Nachricht senden.' : `Geburtstag in ${birthday.diff} Tagen. Merke dir einen persönlichen Kontaktpunkt.` };
+  return { headline: 'Heute ist dein Netzwerk stabil.', copy: 'Erfasse neue Gespräche, damit Networkee feinere Beziehungssignale erkennt.' };
+}
+
+function memoryPreview(contact) {
+  if (contact.memory) return contact.memory.split('.').filter(Boolean)[0].trim() + '.';
+  if (contact.goal) return `Beziehungsziel: ${contact.goal}.`;
+  return 'Noch keine persönliche Merkhilfe hinterlegt.';
+}
+
+function relationshipSignalCards(scored, dueNotes) {
+  const atRisk = scored.filter(x => ['B', 'C', 'D'].includes(x.score)).sort((a,b) => b.days - a.days)[0];
+  const birthday = state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 30) })).filter(x => x.diff !== null).sort((a,b) => a.diff - b.diff)[0];
+  const staleHigh = scored.filter(x => x.contact.priority === 'High' && x.days > 45).sort((a,b) => b.days - a.days)[0];
+  return [
+    {
+      cls: atRisk ? 'alert' : 'ok',
+      label: 'Abkühlender Kontakt',
+      value: atRisk ? atRisk.contact.name : 'Keiner',
+      sub: atRisk ? `Seit ${atRisk.days} Tagen ruhig · Score ${atRisk.score}` : 'Aktuell stabil'
+    },
+    {
+      cls: birthday ? 'action' : '',
+      label: 'Persönlicher Anlass',
+      value: birthday ? birthday.c.name : 'Keiner',
+      sub: birthday ? (birthday.diff === 0 ? 'Heute Geburtstag' : `Geburtstag in ${birthday.diff} Tagen`) : 'Keine Anlässe in 30 Tagen'
+    },
+    {
+      cls: dueNotes.length ? 'alert' : (staleHigh ? 'action' : 'ok'),
+      label: 'Offene Follow-ups',
+      value: String(dueNotes.length),
+      sub: dueNotes.length ? 'Heute oder überfällig' : (staleHigh ? `${staleHigh.contact.name} aktivieren` : 'Nichts offen')
+    }
+  ];
+}
+
 function renderToday() {
   const dueNotes = state.notes.filter(isDue);
   const scored = state.contacts.map(c => ({ contact: c, ...scoreFor(c) }));
@@ -245,6 +317,9 @@ function renderToday() {
   document.getElementById('dueTodayCount').textContent = dueNotes.length;
   document.getElementById('atRiskCount').textContent = atRisk.length;
   document.getElementById('topContactCount').textContent = top.length;
+  const assistant = strongestSignal(scored, dueNotes);
+  document.getElementById('assistantHeadline').textContent = assistant.headline;
+  document.getElementById('assistantCopy').textContent = assistant.copy;
 
   const todayList = document.getElementById('todayList');
   const tasks = [
@@ -270,11 +345,8 @@ function renderToday() {
   if (!state.contacts.length) {
     signalList.innerHTML = '<p class="empty-state">Erfasse zuerst Personen in deinem Netzwerk.</p>';
   } else {
-    signalList.innerHTML = [
-      { label: 'Beste Beziehung', value: top[0]?.contact.name || 'Noch keine', sub: top[0] ? `Score ${top[0].score}` : 'Interaktionen erfassen' },
-      { label: 'Grösstes Risiko', value: atRisk[0]?.contact.name || 'Keine', sub: atRisk[0] ? `Score ${atRisk[0].score}` : 'Aktuell stabil' },
-      { label: 'Offene Follow-ups', value: dueNotes.length, sub: 'Heute oder überfällig' }
-    ].map(s => `<article class="signal-card"><p>${s.label}</p><h3>${escapeHTML(s.value)}</h3><span>${escapeHTML(s.sub)}</span></article>`).join('');
+    signalList.innerHTML = relationshipSignalCards(scored, dueNotes)
+      .map(s => `<article class="signal-card ${s.cls}"><p>${s.label}</p><h3>${escapeHTML(s.value)}</h3><span>${escapeHTML(s.sub)}</span></article>`).join('');
   }
 }
 
@@ -302,8 +374,9 @@ function renderContacts() {
           <div class="score ${s.level}">${s.score}</div>
         </header>
         <div class="tags">${(c.tags || []).map(t => `<span class="tag">${escapeHTML(t)}</span>`).join('')}<span class="tag priority">${escapeHTML(c.priority || 'Medium')}</span></div>
+        <p class="human-line">${escapeHTML(memoryPreview(c))}</p>
         <p class="memory">${escapeHTML(relationshipInsight(c))}</p>
-        <p class="meta">${notes.length} Interaktion(en) · ${escapeHTML(s.source)}: ${s.days === Infinity ? 'keine' : 'vor ' + s.days + ' Tagen'}</p>
+        <p class="meta">${s.days === Infinity ? 'Noch keine Timeline' : 'Letzter Kontakt vor ' + s.days + ' Tagen'} · ${notes.length} Moment(e)</p>
         <div class="card-actions" onclick="event.stopPropagation()">
           <button class="small-btn" onclick='quickNote("${c.id}")'>Capture</button>
           <button class="small-btn" onclick='editContact("${c.id}")'>Bearbeiten</button>
@@ -342,8 +415,8 @@ function openProfile(id) {
       <div><span>Interaktionen</span><strong>${notes.length}</strong></div>
     </div>
     <h3>Wichtig zu merken</h3>
-    <p class="memory">${escapeHTML(c.memory || 'Noch keine Merkhilfe hinterlegt.')}</p>
-    <h3>Timeline</h3>
+    <div class="memory-card"><p>${escapeHTML(c.memory || 'Noch keine persönliche Merkhilfe hinterlegt. Erfasse Interessen, gemeinsame Themen oder private Details, damit aus dem Kontakt eine echte Beziehungserinnerung wird.')}</p></div>
+    <h3>Relationship Timeline</h3>
     <div class="timeline">
       ${notes.length ? notes.map(n => `
         <article class="timeline-item">
@@ -351,7 +424,7 @@ function openProfile(id) {
           <p>${escapeHTML(n.text)}</p>
           ${n.nextStep ? `<p class="meta"><strong>Nächster Schritt:</strong> ${escapeHTML(n.nextStep)}</p>` : ''}
           ${n.followupDate ? `<p class="date-line">Follow-up: ${formatDate(n.followupDate)}</p>` : ''}
-        </article>`).join('') : '<p class="empty-state">Noch keine Timeline vorhanden.</p>'}
+        </article>`).join('') : '<div class="timeline-empty">Noch keine gemeinsamen Momente dokumentiert.</div>'}
     </div>
     <div class="card-actions">
       <button class="small-btn" onclick='quickNote("${c.id}")'>Neue Interaktion</button>
@@ -407,5 +480,5 @@ function formatDate(date) { return new Intl.DateTimeFormat('de-CH', { day: '2-di
 function escapeHTML(str) { return String(str || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
 function initials(name) { return String(name || '?').split(' ').filter(Boolean).slice(0,2).map(p => p[0]).join('').toUpperCase(); }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=2.0').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=3.0').catch(() => {});
 renderAll();
