@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'networkee_mvp_v5';
-const LEGACY_KEYS = ['networkee_mvp_v4', 'networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
+const STORAGE_KEY = 'networkee_mvp_v7';
+const LEGACY_KEYS = ['networkee_mvp_v6', 'networkee_mvp_v5', 'networkee_mvp_v4', 'networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
 
 function daysAgo(days) {
   const d = new Date();
@@ -24,6 +24,11 @@ const seedData = {
       priority: 'Medium',
       birthday: '',
       memory: 'Exploratives Interview für Networkee. Relevante Zielgruppe mit hohem Organisationsbezug. Merken: mag klare Strukturen, arbeitet nah an Geschäftsleitung, offen für smarte Erinnerungen.',
+      city: 'Wallisellen',
+      region: 'Zürich',
+      country: 'Schweiz',
+      lat: 47.4044,
+      lng: 8.5807,
       createdAt: daysAgo(42)
     },
     {
@@ -36,6 +41,11 @@ const seedData = {
       priority: 'High',
       birthday: '',
       memory: 'Perspektive aus Sales/Key Account. Hoher Fit für Relationship-Management-Use-Cases. Merken: Vertrieb, CRM, persönliche Vorbereitung vor Gesprächen, Business Opportunity.',
+      city: 'Zürich',
+      region: 'Zürich',
+      country: 'Schweiz',
+      lat: 47.3769,
+      lng: 8.5417,
       createdAt: daysAgo(120)
     }
   ],
@@ -47,6 +57,8 @@ seedData.notes = [
 ];
 
 let state = loadState();
+let leafletMap = null;
+let leafletMarkers = [];
 
 function loadState() {
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -71,6 +83,11 @@ function normalizeState(data) {
     contacts: (data.contacts || []).map(c => ({
       priority: 'Medium',
       birthday: '',
+      city: '',
+      region: '',
+      country: '',
+      lat: null,
+      lng: null,
       createdAt: new Date().toISOString(),
       ...c
     })),
@@ -88,7 +105,9 @@ function navTo(viewId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === viewId));
   closeMenu();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (viewId === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 180);
 }
+
 
 function openMenu() {
   const menu = document.getElementById('sideMenu');
@@ -147,6 +166,11 @@ document.getElementById('contactForm').addEventListener('submit', (event) => {
     name: document.getElementById('contactName').value.trim(),
     role: document.getElementById('contactRole').value.trim(),
     company: document.getElementById('contactCompany').value.trim(),
+    city: document.getElementById('contactCity').value.trim(),
+    region: document.getElementById('contactRegion').value.trim(),
+    country: document.getElementById('contactCountry').value.trim(),
+    lat: parseCoordinate(document.getElementById('contactLat').value),
+    lng: parseCoordinate(document.getElementById('contactLng').value),
     tags: document.getElementById('contactTags').value.split(',').map(t => t.trim()).filter(Boolean),
     priority: document.getElementById('contactPriority').value,
     birthday: document.getElementById('contactBirthday').value,
@@ -154,6 +178,7 @@ document.getElementById('contactForm').addEventListener('submit', (event) => {
     memory: document.getElementById('contactMemory').value.trim(),
     createdAt: existing?.createdAt || new Date().toISOString()
   };
+  applyBestKnownCoordinates(contact);
   const index = state.contacts.findIndex(c => c.id === id);
   if (index >= 0) state.contacts[index] = contact;
   else state.contacts.unshift(contact);
@@ -207,10 +232,10 @@ function csvEscape(value) {
 }
 
 function exportCSV() {
-  const contactRows = [['id','name','role','company','tags','priority','goal','birthday','memory','relationship_score','last_contact_days','created_at']];
+  const contactRows = [['id','name','role','company','city','region','country','latitude','longitude','tags','priority','goal','birthday','memory','relationship_score','last_contact_days','created_at']];
   state.contacts.forEach(c => {
     const s = scoreFor(c);
-    contactRows.push([c.id,c.name,c.role,c.company,(c.tags || []).join('|'),c.priority,c.goal,c.birthday,c.memory,s.score,s.days === Infinity ? '' : s.days,c.createdAt]);
+    contactRows.push([c.id,c.name,c.role,c.company,c.city,c.region,c.country,c.lat ?? '',c.lng ?? '',(c.tags || []).join('|'),c.priority,c.goal,c.birthday,c.memory,s.score,s.days === Infinity ? '' : s.days,c.createdAt]);
   });
   const noteRows = [['id','contact_id','contact_name','type','text','next_step','followup_date','created_at']];
   state.notes.forEach(n => noteRows.push([n.id,n.contactId,contactName(n.contactId),n.type,n.text,n.nextStep,n.followupDate,n.createdAt]));
@@ -267,7 +292,7 @@ function exportPDF() {
     ...relationshipSignalCards(scored, due).map(s => ({ text: `${s.label}: ${s.value} | ${s.sub} | Aktion: ${s.action}` })),
     { title: true, text: 'Kontakte' },
     ...scored.flatMap(({ c, score, days }) => ([
-      { text: `${c.name} (${score}) - ${c.goal || 'kein Ziel'} - letzter Kontakt: ${days === Infinity ? 'keiner' : days + ' Tage'}` },
+      { text: `${c.name} (${score}) - ${c.goal || 'kein Ziel'} - Ort: ${locationLabel(c) || '-'} - letzter Kontakt: ${days === Infinity ? 'keiner' : days + ' Tage'}` },
       { text: `Merken: ${c.memory || '-'}` }
     ]))
   ];
@@ -281,7 +306,7 @@ function exportVCARD() {
     const org = c.company || '';
     const title = c.role || '';
     const note = [c.goal, c.priority ? `Priorität: ${c.priority}` : '', c.memory].filter(Boolean).join(' | ');
-    return ['BEGIN:VCARD','VERSION:3.0',`FN:${name}`,`ORG:${org}`,`TITLE:${title}`,`NOTE:${note}`,'END:VCARD'].join('\n');
+    return ['BEGIN:VCARD','VERSION:3.0',`FN:${name}`,`ORG:${org}`,`TITLE:${title}`,`ADR;TYPE=HOME:;;${c.city || ''};${c.region || ''};;${c.country || ''}`,`${hasCoordinates(c) ? `GEO:${c.lat};${c.lng}` : ''}`,`NOTE:${note}`,'END:VCARD'].join('\n');
   }).join('\n');
   downloadBlob(`networkee-contacts-${new Date().toISOString().slice(0,10)}.vcf`, body, 'text/vcard;charset=utf-8');
 }
@@ -291,6 +316,8 @@ function buildRelationshipFeed(scored, dueNotes) {
   dueNotes.slice(0, 2).forEach(n => feed.push({ icon: '⏱️', title: `${contactName(n.contactId)} wartet auf ein Follow-up`, meta: n.nextStep || 'Heute nachfassen', contactId: n.contactId }));
   scored.filter(x => x.days >= 60).slice(0, 2).forEach(x => feed.push({ icon: '🔥', title: `${x.contact.name} wird kalt`, meta: `${x.days} Tage kein dokumentierter Kontakt · ${x.contact.goal || 'Beziehung pflegen'}`, contactId: x.contact.id }));
   state.contacts.map(c => ({ c, diff: birthdayWithinDays(c, 45) })).filter(x => x.diff !== null).slice(0, 2).forEach(x => feed.push({ icon: '🎂', title: `${x.c.name} hat ${x.diff === 0 ? 'heute' : 'bald'} Geburtstag`, meta: x.diff === 0 ? 'Heute persönlich melden' : `In ${x.diff} Tagen · persönlichen Anlass vorbereiten`, contactId: x.c.id }));
+  const largestCluster = locationClusters()[0];
+  if (largestCluster) feed.push({ icon: '🗺️', title: `${largestCluster.label}: dein stärkster Netzwerk-Cluster`, meta: `${largestCluster.count} Kontakt${largestCluster.count === 1 ? '' : 'e'} · geografische Beziehungspflege`, contactId: '' });
   scored.filter(x => ['A+','A'].includes(x.score)).slice(0, 2).forEach(x => feed.push({ icon: '⭐', title: `${x.contact.name} ist stark gepflegt`, meta: `Score ${x.score} · Momentum halten`, contactId: x.contact.id }));
   if (!feed.length) feed.push({ icon: '🧠', title: 'Networkee lernt dein Netzwerk kennen', meta: 'Erfasse Kontakte und Gespräche, damit der Feed smarter wird.', contactId: '' });
   return feed.slice(0, 5);
@@ -359,6 +386,11 @@ function openContactDialog(contact = null) {
   document.getElementById('contactName').value = contact?.name || '';
   document.getElementById('contactRole').value = contact?.role || '';
   document.getElementById('contactCompany').value = contact?.company || '';
+  document.getElementById('contactCity').value = contact?.city || '';
+  document.getElementById('contactRegion').value = contact?.region || '';
+  document.getElementById('contactCountry').value = contact?.country || '';
+  document.getElementById('contactLat').value = contact?.lat ?? '';
+  document.getElementById('contactLng').value = contact?.lng ?? '';
   document.getElementById('contactTags').value = contact?.tags?.join(', ') || '';
   document.getElementById('contactPriority').value = contact?.priority || 'Medium';
   document.getElementById('contactBirthday').value = contact?.birthday || '';
@@ -448,10 +480,216 @@ function relationshipSignalCards(scored, dueNotes) {
       value: String(dueNotes.length),
       sub: dueNotes.length ? 'Heute oder überfällig' : 'Nichts offen',
       action: dueNotes.length ? 'Heute erledigen' : 'Keine Aktion nötig'
+    },
+    {
+      cls: countryClusters().length ? 'opportunity' : 'calm',
+      icon: '🗺️',
+      label: 'Geografie',
+      value: countryClusters()[0]?.country || 'Noch leer',
+      sub: countryClusters().length ? `${countryClusters().length} Länder im Netzwerk` : 'Wohnorte ergänzen',
+      action: countryClusters().length ? 'Network Map öffnen' : 'Standortdaten erfassen'
     }
   ];
 }
 
+
+
+function locationLabel(contact) {
+  return [contact.city, contact.region, contact.country].filter(Boolean).join(', ');
+}
+
+function locationKey(contact) {
+  if (!contact.city && !contact.region && !contact.country) return '';
+  return [contact.city || contact.region || 'Unbekannter Ort', contact.country || ''].filter(Boolean).join(', ');
+}
+
+function locationClusters() {
+  const map = new Map();
+  state.contacts.forEach(c => {
+    const key = locationKey(c);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, { label: key, contacts: [], countries: new Set() });
+    map.get(key).contacts.push(c);
+    if (c.country) map.get(key).countries.add(c.country);
+  });
+  return [...map.values()].map(x => ({ ...x, count: x.contacts.length })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function countryClusters() {
+  const map = new Map();
+  state.contacts.forEach(c => {
+    const key = c.country || (locationKey(c) ? 'Unbekannt' : '');
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(c);
+  });
+  return [...map.entries()].map(([country, contacts]) => ({ country, contacts, count: contacts.length })).sort((a, b) => b.count - a.count || a.country.localeCompare(b.country));
+}
+
+const CITY_COORDINATES = {
+  'wallisellen|schweiz': [47.4044, 8.5807],
+  'zurich|schweiz': [47.3769, 8.5417],
+  'zurich|switzerland': [47.3769, 8.5417],
+  'wil|schweiz': [47.4615, 9.0455],
+  'st. gallen|schweiz': [47.4245, 9.3767],
+  'st gallen|schweiz': [47.4245, 9.3767],
+  'bern|schweiz': [46.9480, 7.4474],
+  'basel|schweiz': [47.5596, 7.5886],
+  'luzern|schweiz': [47.0502, 8.3093],
+  'geneva|switzerland': [46.2044, 6.1432],
+  'genf|schweiz': [46.2044, 6.1432],
+  'mailand|italien': [45.4642, 9.1900],
+  'milano|italien': [45.4642, 9.1900],
+  'rom|italien': [41.9028, 12.4964],
+  'berlin|deutschland': [52.5200, 13.4050],
+  'munchen|deutschland': [48.1351, 11.5820],
+  'munich|germany': [48.1351, 11.5820],
+  'hamburg|deutschland': [53.5511, 9.9937],
+  'wien|osterreich': [48.2082, 16.3738],
+  'vienna|austria': [48.2082, 16.3738],
+  'paris|frankreich': [48.8566, 2.3522],
+  'london|uk': [51.5072, -0.1276],
+  'new york|usa': [40.7128, -74.0060],
+  'san francisco|usa': [37.7749, -122.4194],
+  'dubai|vae': [25.2048, 55.2708],
+  'dubai|united arab emirates': [25.2048, 55.2708],
+  'denpasar|indonesien': [-8.6705, 115.2126],
+  'bali|indonesien': [-8.3405, 115.0920],
+  'zanzibar|tansania': [-6.1659, 39.2026]
+};
+
+function normalizeGeoText(value) {
+  return String(value || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace('switzerland','schweiz')
+    .replace('germany','deutschland')
+    .replace('austria','osterreich')
+    .replace('italy','italien')
+    .replace('france','frankreich');
+}
+
+function parseCoordinate(value) {
+  if (value === '' || value === null || value === undefined) return null;
+  const parsed = Number(String(value).replace(',', '.').trim());
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function hasCoordinates(contact) {
+  return Number.isFinite(Number(contact?.lat)) && Number.isFinite(Number(contact?.lng));
+}
+
+function geocodeContact(contact) {
+  if (!contact) return null;
+  if (hasCoordinates(contact)) return { lat: Number(contact.lat), lng: Number(contact.lng), confidence: 'manual' };
+  const city = normalizeGeoText(contact.city || contact.region);
+  const country = normalizeGeoText(contact.country);
+  const keys = [city && country ? `${city}|${country}` : '', city ? `${city}|schweiz` : '', country ? `|${country}` : ''].filter(Boolean);
+  for (const key of keys) {
+    const coords = CITY_COORDINATES[key];
+    if (coords) return { lat: coords[0], lng: coords[1], confidence: 'known-city' };
+  }
+  return null;
+}
+
+function applyBestKnownCoordinates(contact) {
+  const geo = geocodeContact(contact);
+  if (geo) {
+    contact.lat = geo.lat;
+    contact.lng = geo.lng;
+  }
+  return contact;
+}
+
+function mapLocations() {
+  const grouped = new Map();
+  state.contacts.forEach(contact => {
+    const geo = geocodeContact(contact);
+    if (!geo) return;
+    const label = locationKey(contact) || contact.name;
+    const key = `${geo.lat.toFixed(4)},${geo.lng.toFixed(4)}`;
+    if (!grouped.has(key)) grouped.set(key, { label, lat: geo.lat, lng: geo.lng, contacts: [] });
+    grouped.get(key).contacts.push(contact);
+  });
+  return [...grouped.values()].sort((a, b) => b.contacts.length - a.contacts.length || a.label.localeCompare(b.label));
+}
+
+function destroyLeafletMap() {
+  if (leafletMap) {
+    leafletMap.remove();
+    leafletMap = null;
+    leafletMarkers = [];
+  }
+}
+
+function initInteractiveMap(locations) {
+  destroyLeafletMap();
+  if (!window.L || !document.getElementById('interactiveMap')) return false;
+  leafletMap = L.map('interactiveMap', { scrollWheelZoom: false, zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(leafletMap);
+  const bounds = [];
+  locations.forEach(location => {
+    const names = location.contacts.map(c => escapeHTML(c.name)).join('<br>');
+    const marker = L.marker([location.lat, location.lng]).addTo(leafletMap)
+      .bindPopup(`<strong>${escapeHTML(location.label)}</strong><br>${location.contacts.length} Kontakt${location.contacts.length === 1 ? '' : 'e'}<br>${names}`);
+    leafletMarkers.push(marker);
+    bounds.push([location.lat, location.lng]);
+  });
+  if (bounds.length === 1) leafletMap.setView(bounds[0], 10);
+  else leafletMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 8 });
+  setTimeout(() => leafletMap.invalidateSize(), 120);
+  return true;
+}
+
+function renderMap() {
+  const mapRoot = document.getElementById('mapRoot');
+  if (!mapRoot) return;
+  const locations = locationClusters();
+  const countries = countryClusters();
+  const mapPoints = mapLocations();
+  const located = state.contacts.filter(c => locationKey(c)).length;
+  const mapped = mapPoints.reduce((sum, p) => sum + p.contacts.length, 0);
+  const unlocated = state.contacts.length - located;
+  const unmapped = state.contacts.length - mapped;
+  if (!state.contacts.length) {
+    destroyLeafletMap();
+    mapRoot.innerHTML = '<p class="empty-state">Erfasse zuerst Kontakte mit Wohnort, Land oder Region.</p>';
+    return;
+  }
+  mapRoot.innerHTML = `
+    <section class="map-hero panel">
+      <p class="eyebrow">Interactive Network Map</p>
+      <h2>Wo lebt dein Netzwerk?</h2>
+      <p class="muted">Diese Version zeigt deine Kontakte erstmals auf einer echten interaktiven Karte. Häufige Städte werden automatisch erkannt; für exakte Pins kannst du im Kontaktprofil Koordinaten ergänzen.</p>
+      <div class="map-stats">
+        <article><strong>${mapped}</strong><span>kartierte Kontakte</span></article>
+        <article><strong>${countries.length}</strong><span>Länder</span></article>
+        <article><strong>${mapPoints.length}</strong><span>Map-Pins</span></article>
+      </div>
+      ${unmapped ? `<p class="map-note">${unmapped} Kontakt${unmapped === 1 ? '' : 'e'} ohne erkannte Koordinaten. Ergänze Latitude/Longitude oder eine bekannte Stadt.</p>` : ''}
+    </section>
+    <section class="panel world-panel">
+      <div id="interactiveMap" class="interactive-map" aria-label="Interaktive geografische Netzwerkübersicht"></div>
+      ${!mapPoints.length ? '<p class="empty-state">Noch keine Kontakte mit erkennbaren Koordinaten vorhanden.</p>' : ''}
+    </section>
+    <section class="panel">
+      <div class="section-head"><h3>Stärkste Länder</h3><span class="muted">${unlocated ? `${unlocated} ohne Ort` : 'vollständig erfasst'}</span></div>
+      <div class="country-list">
+        ${countries.length ? countries.map(c => `<article class="country-card"><div><strong>${escapeHTML(c.country)}</strong><span>${c.contacts.map(x => escapeHTML(x.name)).join(', ')}</span></div><b>${c.count}</b></article>`).join('') : '<p class="empty-state">Noch keine Länder hinterlegt.</p>'}
+      </div>
+    </section>
+    <section class="panel">
+      <div class="section-head"><h3>Standort-Cluster</h3><button class="text-btn" data-nav="network">Kontakte öffnen</button></div>
+      <div class="location-grid">
+        ${locations.length ? locations.map(l => `<article class="location-card"><span>📍</span><h3>${escapeHTML(l.label)}</h3><p>${l.count} Kontakt${l.count === 1 ? '' : 'e'}</p><small>${l.contacts.map(c => escapeHTML(c.name)).join(' · ')}</small></article>`).join('') : '<p class="empty-state">Noch keine Standorte hinterlegt.</p>'}
+      </div>
+    </section>
+  `;
+  mapRoot.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => navTo(btn.dataset.nav)));
+  initInteractiveMap(mapPoints);
+}
 
 function renderToday() {
   const dueNotes = state.notes.filter(isDue);
@@ -505,7 +743,7 @@ function renderContacts() {
   const query = document.getElementById('searchInput').value.toLowerCase();
   const list = document.getElementById('contactList');
   const filtered = state.contacts
-    .filter(c => [c.name, c.role, c.company, c.goal, c.memory, c.priority, ...(c.tags || [])].join(' ').toLowerCase().includes(query))
+    .filter(c => [c.name, c.role, c.company, c.city, c.region, c.country, c.goal, c.memory, c.priority, ...(c.tags || [])].join(' ').toLowerCase().includes(query))
     .sort((a,b) => scoreFor(a).score.localeCompare(scoreFor(b).score));
   if (!filtered.length) {
     list.innerHTML = '<p class="empty-state">Keine Personen gefunden.</p>';
@@ -521,6 +759,7 @@ function renderContacts() {
           <div class="contact-main">
             <h3>${escapeHTML(c.name)}</h3>
             <p class="meta">${escapeHTML([c.role, c.company].filter(Boolean).join(' · ') || c.goal)}</p>
+            ${locationLabel(c) ? `<p class="location-line">📍 ${escapeHTML(locationLabel(c))}</p>` : ''}
           </div>
           <div class="score ${s.level}">${s.score}</div>
         </header>
@@ -551,6 +790,7 @@ function openProfile(id) {
         <p class="eyebrow">Kontaktprofil</p>
         <h2>${escapeHTML(c.name)}</h2>
         <p class="meta">${escapeHTML([c.role, c.company].filter(Boolean).join(' · ') || c.goal)}</p>
+        ${locationLabel(c) ? `<p class="location-line">📍 ${escapeHTML(locationLabel(c))}</p>` : ''}
       </div>
       <div class="score ${s.level}">${s.score}</div>
     </div>
@@ -563,6 +803,7 @@ function openProfile(id) {
       <div><span>Ziel</span><strong>${escapeHTML(c.goal)}</strong></div>
       <div><span>Priorität</span><strong>${escapeHTML(c.priority || 'Medium')}</strong></div>
       <div><span>Geburtstag</span><strong>${c.birthday ? formatDate(c.birthday) : '—'}</strong></div>
+      <div><span>Ort</span><strong>${escapeHTML(locationLabel(c) || '—')}</strong></div>
       <div><span>Interaktionen</span><strong>${notes.length}</strong></div>
     </div>
     <h3>Memory Hub</h3>
@@ -630,10 +871,10 @@ function renderInsights() {
   `).join('');
 }
 
-function renderAll() { renderToday(); renderContacts(); renderNoteContacts(); renderInsights(); }
+function renderAll() { renderToday(); renderContacts(); renderNoteContacts(); renderInsights(); renderMap(); }
 function formatDate(date) { return new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(date)); }
 function escapeHTML(str) { return String(str || '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char])); }
 function initials(name) { return String(name || '?').split(' ').filter(Boolean).slice(0,2).map(p => p[0]).join('').toUpperCase(); }
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5.0').catch(() => {});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=7.0').catch(() => {});
 renderAll();

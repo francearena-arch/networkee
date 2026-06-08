@@ -1,14 +1,15 @@
-# Networkee MVP v5
+# Networkee MVP v7
 
-Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS.
+Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mit geografischer Netzwerkebene.
 
-## Neu in v5
+## Neu in v7
 
-- Relationship Signals als echte Handlungssignale
-- Export Center mit JSON, CSV und PDF
-- Smart Assistant auf der Startseite geschärft
-- Kontaktkarten und Relationship Memory weiter emotionalisiert
-- Mobile Frontend und Bottom-Navigation weiter optimiert
+- Standortfelder pro Kontakt: Wohnort, Region, Land
+- Network Map als eigene Ansicht
+- geografische Cluster nach Ländern und Standorten
+- Map-Preview ohne externe API als Vorbereitung für Leaflet/OpenStreetMap
+- Standortinformationen auf Kontaktkarten und im Profil
+- Exportformate um Standortdaten erweitert
 
 ## Start lokal
 
