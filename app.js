@@ -534,6 +534,12 @@ function countryClusters() {
 
 const CITY_COORDINATES = {
   'wallisellen|schweiz': [47.4044, 8.5807],
+  'bassersdorf|schweiz': [47.4435, 8.6280],
+  'fehraltorf|schweiz': [47.3871, 8.7510],
+  'duebendorf|schweiz': [47.3972, 8.6187],
+  'dubendorf|schweiz': [47.3972, 8.6187],
+  'uster|schweiz': [47.3490, 8.7190],
+  'winterthur|schweiz': [47.4988, 8.7237],
   'zurich|schweiz': [47.3769, 8.5417],
   'zurich|switzerland': [47.3769, 8.5417],
   'wil|schweiz': [47.4615, 9.0455],
@@ -574,6 +580,47 @@ function normalizeGeoText(value) {
     .replace('france','frankreich');
 }
 
+const GEOCODE_CACHE_KEY = 'networkee-geocode-cache-v9';
+let geocodeCache = (() => {
+  try { return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY) || '{}'); }
+  catch { return {}; }
+})();
+
+function saveGeocodeCache() {
+  try { localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(geocodeCache)); } catch {}
+}
+
+function addressForGeocoding(contact) {
+  return [contact?.city, contact?.region, contact?.country].map(x => String(x || '').trim()).filter(Boolean).join(', ');
+}
+
+function queryKeyForContact(contact) {
+  return normalizeGeoText(addressForGeocoding(contact));
+}
+
+async function geocodeContactOnline(contact) {
+  const query = addressForGeocoding(contact);
+  const cacheKey = queryKeyForContact(contact);
+  if (!query || !cacheKey) return null;
+  if (geocodeCache[cacheKey]) return geocodeCache[cacheKey];
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=${encodeURIComponent(query)}`;
+    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!response.ok) return null;
+    const results = await response.json();
+    if (!Array.isArray(results) || !results.length) return null;
+    const lat = Number(results[0].lat);
+    const lng = Number(results[0].lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const result = { lat, lng, confidence: 'online', label: results[0].display_name || query };
+    geocodeCache[cacheKey] = result;
+    saveGeocodeCache();
+    return result;
+  } catch {
+    return null;
+  }
+}
+
 function parseCoordinate(value) {
   if (value === '' || value === null || value === undefined) return null;
   const parsed = Number(String(value).replace(',', '.').trim());
@@ -610,17 +657,37 @@ function applyBestKnownCoordinates(contact) {
   return contact;
 }
 
-function mapLocations() {
+function groupMapPoints(points) {
   const grouped = new Map();
-  state.contacts.forEach(contact => {
-    const geo = geocodeContact(contact);
+  points.forEach(({ contact, geo }) => {
     if (!geo) return;
     const label = locationKey(contact) || contact.name;
-    const key = `${geo.lat.toFixed(4)},${geo.lng.toFixed(4)}`;
-    if (!grouped.has(key)) grouped.set(key, { label, lat: geo.lat, lng: geo.lng, contacts: [] });
+    const key = `${Number(geo.lat).toFixed(5)},${Number(geo.lng).toFixed(5)}`;
+    if (!grouped.has(key)) grouped.set(key, { label, lat: Number(geo.lat), lng: Number(geo.lng), contacts: [] });
     grouped.get(key).contacts.push(contact);
   });
   return [...grouped.values()].sort((a, b) => b.contacts.length - a.contacts.length || a.label.localeCompare(b.label));
+}
+
+function mapLocations() {
+  return groupMapPoints(state.contacts.map(contact => ({ contact, geo: geocodeContact(contact) })).filter(x => x.geo));
+}
+
+async function mapLocationsResolved() {
+  const points = [];
+  for (const contact of state.contacts) {
+    let geo = geocodeContact(contact);
+    if (!geo && locationKey(contact)) {
+      geo = await geocodeContactOnline(contact);
+      if (geo) {
+        contact.lat = geo.lat;
+        contact.lng = geo.lng;
+      }
+    }
+    if (geo) points.push({ contact, geo });
+  }
+  if (points.length) saveState();
+  return groupMapPoints(points);
 }
 
 function destroyLeafletMap() {
@@ -633,48 +700,69 @@ function destroyLeafletMap() {
 
 function initInteractiveMap(locations) {
   destroyLeafletMap();
-  if (!window.L || !document.getElementById('interactiveMap')) return false;
-  leafletMap = L.map('interactiveMap', {
+  const container = document.getElementById('interactiveMap');
+  if (!window.L || !container) return false;
+
+  leafletMap = L.map(container, {
     scrollWheelZoom: true,
     zoomControl: true,
     dragging: true,
     touchZoom: true,
     doubleClickZoom: true,
-    worldCopyJump: true,
+    worldCopyJump: false,
     zoomSnap: 0.25,
-    minZoom: 1,
-    maxBounds: [[-85, -180], [85, 180]],
-    maxBoundsViscosity: 0.7
-  });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    minZoom: 2,
     maxZoom: 18,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(leafletMap);
+    preferCanvas: true
+  });
+
+  const baseLayers = [
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }),
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    })
+  ];
+  baseLayers[0].addTo(leafletMap);
+
   const bounds = [];
   locations.forEach(location => {
     const names = location.contacts.map(c => escapeHTML(c.name)).join('<br>');
-    const marker = L.marker([location.lat, location.lng]).addTo(leafletMap)
+    const marker = L.marker([location.lat, location.lng], {
+      title: location.contacts.map(c => c.name).join(', '),
+      riseOnHover: true
+    }).addTo(leafletMap)
       .bindPopup(`<strong>${escapeHTML(location.label)}</strong><br>${location.contacts.length} Kontakt${location.contacts.length === 1 ? '' : 'e'}<br>${names}`);
     leafletMarkers.push(marker);
     bounds.push([location.lat, location.lng]);
   });
-  if (bounds.length === 1) {
-    // Keep the world visible by default; user can zoom into the pin.
-    leafletMap.setView([20, 0], 1.5);
+
+  if (bounds.length) {
+    const latLngBounds = L.latLngBounds(bounds);
+    leafletMap.fitBounds(latLngBounds, {
+      padding: [42, 42],
+      maxZoom: bounds.length === 1 ? 11 : 9
+    });
   } else {
-    leafletMap.fitBounds(bounds, { padding: [42, 42], maxZoom: 3 });
+    leafletMap.setView([20, 0], 2);
   }
-  setTimeout(() => leafletMap.invalidateSize(), 120);
-  setTimeout(() => leafletMap.invalidateSize(), 450);
+
+  setTimeout(() => leafletMap.invalidateSize(true), 80);
+  setTimeout(() => leafletMap.invalidateSize(true), 350);
+  setTimeout(() => leafletMap.invalidateSize(true), 900);
   return true;
 }
 
-function renderMap() {
+async function renderMap() {
   const mapRoot = document.getElementById('mapRoot');
   if (!mapRoot) return;
   const locations = locationClusters();
   const countries = countryClusters();
-  const mapPoints = mapLocations();
+  let mapPoints = mapLocations();
   const located = state.contacts.filter(c => locationKey(c)).length;
   const mapped = mapPoints.reduce((sum, p) => sum + p.contacts.length, 0);
   const unlocated = state.contacts.length - located;
@@ -688,13 +776,13 @@ function renderMap() {
     <section class="map-hero panel">
       <p class="eyebrow">Interactive Network Map</p>
       <h2>Wo lebt dein Netzwerk?</h2>
-      <p class="muted">Diese Version zeigt deine Kontakte erstmals auf einer echten interaktiven Karte. Häufige Städte werden automatisch erkannt; für exakte Pins kannst du im Kontaktprofil Koordinaten ergänzen.</p>
+      <p class="muted">Networkee erkennt Wohnort, Region und Land automatisch und platziert deine Kontakte als Pins auf einer interaktiven Karte.</p>
       <div class="map-stats">
         <article><strong>${mapped}</strong><span>kartierte Kontakte</span></article>
         <article><strong>${countries.length}</strong><span>Länder</span></article>
         <article><strong>${mapPoints.length}</strong><span>Map-Pins</span></article>
       </div>
-      ${unmapped ? `<p class="map-note">${unmapped} Kontakt${unmapped === 1 ? '' : 'e'} ohne erkannte Koordinaten. Ergänze Wohnort, Region und Land möglichst eindeutig.</p>` : ''}
+      ${unmapped ? `<p class="map-note">${unmapped} Kontakt${unmapped === 1 ? '' : 'e'} ohne erkannte Koordinaten. Bitte Wohnort, Region und Land möglichst eindeutig hinterlegen.</p>` : ''}
     </section>
     <section class="panel world-panel">
       <div id="interactiveMap" class="interactive-map" aria-label="Interaktive geografische Netzwerkübersicht"></div>
@@ -715,6 +803,11 @@ function renderMap() {
   `;
   mapRoot.querySelectorAll('[data-nav]').forEach(btn => btn.addEventListener('click', () => navTo(btn.dataset.nav)));
   initInteractiveMap(mapPoints);
+
+  const resolvedPoints = await mapLocationsResolved();
+  if (JSON.stringify(resolvedPoints.map(p => [p.lat, p.lng, p.contacts.length])) !== JSON.stringify(mapPoints.map(p => [p.lat, p.lng, p.contacts.length]))) {
+    renderMap();
+  }
 }
 
 function renderToday() {

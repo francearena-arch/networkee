@@ -1,23 +1,22 @@
-# Networkee MVP v8
+# Networkee MVP v9
 
-Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mit geografischer Netzwerkebene.
+Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mit hochwertiger interaktiver Network Map.
 
-## Neu in v8
+## Neu in v9
 
-- Standortfelder pro Kontakt: Wohnort, Region, Land
-- Network Map als eigene Ansicht
-- geografische Cluster nach Ländern und Standorten
-- Map-Preview ohne externe API als Vorbereitung für Leaflet/OpenStreetMap
-- Standortinformationen auf Kontaktkarten und im Profil
-- Exportformate um Standortdaten erweitert
+- echte interaktive Karte mit Leaflet und CARTO/OpenStreetMap-Tiles
+- automatische Standortauflösung über Wohnort, Region und Land
+- Online-Geocoding über OpenStreetMap/Nominatim mit lokalem Cache
+- zusätzliche Stadt-Fallbacks für häufige Schweizer Orte
+- sichtbare Pins für erkannte Kontaktstandorte
+- optimiertes Map-Fitting auf tatsächliche Kontaktstandorte
+- Latitude/Longitude bleiben vollständig ausgeblendet
+- bessere mobile Darstellung der Karte
 
 ## Start lokal
 
 `index.html` im Browser öffnen.
 
+## Hinweis
 
-## v8
-- Latitude/Longitude aus Kontaktformular entfernt
-- automatische Standortauflösung über Wohnort/Region/Land
-- interaktive Karte responsive optimiert
-- Weltkarten-Ansicht mit niedrigem Zoom und nutzbaren Pins
+Die Karte und das Online-Geocoding benötigen Internetzugriff. Erkannte Standorte werden lokal im Browser gecached.

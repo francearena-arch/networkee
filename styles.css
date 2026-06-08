@@ -69,3 +69,51 @@ button{touch-action:manipulation}
   .map-stats{grid-template-columns:1fr 1fr}
 }
 @media(max-width:390px){.interactive-map{height:46vh;min-height:320px!important}}
+
+/* v9 production map layer */
+.world-panel{
+  padding:10px;
+  overflow:hidden;
+}
+.interactive-map{
+  position:relative;
+  width:100%;
+  height:min(58vh,560px)!important;
+  min-height:420px!important;
+  max-height:none!important;
+  border-radius:26px;
+  border:1px solid #bfdbfe;
+  overflow:hidden;
+  background:#e5eef8!important;
+  box-shadow:0 18px 40px rgba(15,23,42,.12);
+  touch-action:auto;
+}
+.leaflet-container{
+  width:100%!important;
+  height:100%!important;
+  border-radius:26px;
+  background:#e5eef8!important;
+  z-index:1;
+}
+.leaflet-pane,.leaflet-map-pane,.leaflet-tile-pane,.leaflet-overlay-pane,.leaflet-marker-pane,.leaflet-shadow-pane,.leaflet-popup-pane{position:absolute!important}
+.leaflet-tile-container img,.leaflet-tile{
+  max-width:none!important;
+  max-height:none!important;
+}
+.leaflet-marker-icon{
+  filter:drop-shadow(0 8px 12px rgba(15,23,42,.22));
+}
+.leaflet-popup-content-wrapper{
+  border-radius:16px;
+  box-shadow:0 14px 36px rgba(15,23,42,.18);
+}
+.leaflet-popup-content{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+  font-size:14px;
+  line-height:1.35;
+}
+@media(max-width:560px){
+  .interactive-map{height:52vh!important;min-height:410px!important;border-radius:24px}
+  .map-hero .muted{font-size:14px}
+}
+@media(max-width:390px){.interactive-map{height:50vh!important;min-height:380px!important}}
