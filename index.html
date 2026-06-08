@@ -8,9 +8,9 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=7.0" />
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=7.0" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=7.0" />
+  <link rel="manifest" href="manifest.json?v=8.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQz50tXTknaMr5XsV3E0hA+NZpGAaGs=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css?v=7.0" />
+  <link rel="stylesheet" href="styles.css?v=8.0" />
 </head>
 <body>
   <div class="app-shell">
@@ -186,11 +186,7 @@
         <label>Region<input id="contactRegion" placeholder="z. B. Zürich" /></label>
       </div>
       <label>Land<input id="contactCountry" placeholder="z. B. Schweiz" /></label>
-      <div class="form-row">
-        <label>Latitude optional<input id="contactLat" inputmode="decimal" placeholder="z. B. 47.3769" /></label>
-        <label>Longitude optional<input id="contactLng" inputmode="decimal" placeholder="z. B. 8.5417" /></label>
-      </div>
-      <p class="form-hint">Koordinaten werden automatisch für häufige Städte erkannt. Für exakte Pins kannst du sie manuell ergänzen.</p>
+      <p class="form-hint">Networkee erkennt Koordinaten automatisch anhand von Wohnort, Region und Land. Du musst keine Latitude oder Longitude erfassen.</p>
       <label>Tags<input id="contactTags" placeholder="Sales, Mentor, Netzwerk" /></label>
       <label>Priorität
         <select id="contactPriority"><option>High</option><option selected>Medium</option><option>Low</option></select>
@@ -240,6 +236,6 @@
   </dialog>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="app.js?v=7.0"></script>
+  <script src="app.js?v=8.0"></script>
 </body>
 </html>

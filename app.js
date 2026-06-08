@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'networkee_mvp_v7';
-const LEGACY_KEYS = ['networkee_mvp_v6', 'networkee_mvp_v5', 'networkee_mvp_v4', 'networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
+const STORAGE_KEY = 'networkee_mvp_v8';
+const LEGACY_KEYS = ['networkee_mvp_v7', 'networkee_mvp_v6', 'networkee_mvp_v5', 'networkee_mvp_v4', 'networkee_mvp_v3', 'networkee_mvp_v2', 'networkee_mvp_v1'];
 
 function daysAgo(days) {
   const d = new Date();
@@ -80,17 +80,25 @@ function loadState() {
 
 function normalizeState(data) {
   return {
-    contacts: (data.contacts || []).map(c => ({
-      priority: 'Medium',
-      birthday: '',
-      city: '',
-      region: '',
-      country: '',
-      lat: null,
-      lng: null,
-      createdAt: new Date().toISOString(),
-      ...c
-    })),
+    contacts: (data.contacts || []).map(c => {
+      const contact = {
+        priority: 'Medium',
+        birthday: '',
+        city: '',
+        region: '',
+        country: '',
+        lat: null,
+        lng: null,
+        createdAt: new Date().toISOString(),
+        ...c
+      };
+      if (Math.abs(Number(contact.lat)) < 0.000001 && Math.abs(Number(contact.lng)) < 0.000001) {
+        contact.lat = null;
+        contact.lng = null;
+      }
+      applyBestKnownCoordinates(contact);
+      return contact;
+    }),
     notes: data.notes || []
   };
 }
@@ -105,7 +113,7 @@ function navTo(viewId) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === viewId));
   closeMenu();
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (viewId === 'map' && leafletMap) setTimeout(() => leafletMap.invalidateSize(), 180);
+  if (viewId === 'map') setTimeout(() => { renderMap(); if (leafletMap) leafletMap.invalidateSize(); }, 220);
 }
 
 
@@ -169,8 +177,8 @@ document.getElementById('contactForm').addEventListener('submit', (event) => {
     city: document.getElementById('contactCity').value.trim(),
     region: document.getElementById('contactRegion').value.trim(),
     country: document.getElementById('contactCountry').value.trim(),
-    lat: parseCoordinate(document.getElementById('contactLat').value),
-    lng: parseCoordinate(document.getElementById('contactLng').value),
+    lat: null,
+    lng: null,
     tags: document.getElementById('contactTags').value.split(',').map(t => t.trim()).filter(Boolean),
     priority: document.getElementById('contactPriority').value,
     birthday: document.getElementById('contactBirthday').value,
@@ -389,8 +397,6 @@ function openContactDialog(contact = null) {
   document.getElementById('contactCity').value = contact?.city || '';
   document.getElementById('contactRegion').value = contact?.region || '';
   document.getElementById('contactCountry').value = contact?.country || '';
-  document.getElementById('contactLat').value = contact?.lat ?? '';
-  document.getElementById('contactLng').value = contact?.lng ?? '';
   document.getElementById('contactTags').value = contact?.tags?.join(', ') || '';
   document.getElementById('contactPriority').value = contact?.priority || 'Medium';
   document.getElementById('contactBirthday').value = contact?.birthday || '';
@@ -575,7 +581,11 @@ function parseCoordinate(value) {
 }
 
 function hasCoordinates(contact) {
-  return Number.isFinite(Number(contact?.lat)) && Number.isFinite(Number(contact?.lng));
+  const lat = Number(contact?.lat);
+  const lng = Number(contact?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (Math.abs(lat) < 0.000001 && Math.abs(lng) < 0.000001) return false;
+  return true;
 }
 
 function geocodeContact(contact) {
@@ -624,7 +634,18 @@ function destroyLeafletMap() {
 function initInteractiveMap(locations) {
   destroyLeafletMap();
   if (!window.L || !document.getElementById('interactiveMap')) return false;
-  leafletMap = L.map('interactiveMap', { scrollWheelZoom: false, zoomControl: true });
+  leafletMap = L.map('interactiveMap', {
+    scrollWheelZoom: true,
+    zoomControl: true,
+    dragging: true,
+    touchZoom: true,
+    doubleClickZoom: true,
+    worldCopyJump: true,
+    zoomSnap: 0.25,
+    minZoom: 1,
+    maxBounds: [[-85, -180], [85, 180]],
+    maxBoundsViscosity: 0.7
+  });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap'
@@ -637,9 +658,14 @@ function initInteractiveMap(locations) {
     leafletMarkers.push(marker);
     bounds.push([location.lat, location.lng]);
   });
-  if (bounds.length === 1) leafletMap.setView(bounds[0], 10);
-  else leafletMap.fitBounds(bounds, { padding: [32, 32], maxZoom: 8 });
+  if (bounds.length === 1) {
+    // Keep the world visible by default; user can zoom into the pin.
+    leafletMap.setView([20, 0], 1.5);
+  } else {
+    leafletMap.fitBounds(bounds, { padding: [42, 42], maxZoom: 3 });
+  }
   setTimeout(() => leafletMap.invalidateSize(), 120);
+  setTimeout(() => leafletMap.invalidateSize(), 450);
   return true;
 }
 
@@ -668,7 +694,7 @@ function renderMap() {
         <article><strong>${countries.length}</strong><span>Länder</span></article>
         <article><strong>${mapPoints.length}</strong><span>Map-Pins</span></article>
       </div>
-      ${unmapped ? `<p class="map-note">${unmapped} Kontakt${unmapped === 1 ? '' : 'e'} ohne erkannte Koordinaten. Ergänze Latitude/Longitude oder eine bekannte Stadt.</p>` : ''}
+      ${unmapped ? `<p class="map-note">${unmapped} Kontakt${unmapped === 1 ? '' : 'e'} ohne erkannte Koordinaten. Ergänze Wohnort, Region und Land möglichst eindeutig.</p>` : ''}
     </section>
     <section class="panel world-panel">
       <div id="interactiveMap" class="interactive-map" aria-label="Interaktive geografische Netzwerkübersicht"></div>

@@ -1,8 +1,8 @@
-# Networkee MVP v7
+# Networkee MVP v8
 
 Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mit geografischer Netzwerkebene.
 
-## Neu in v7
+## Neu in v8
 
 - Standortfelder pro Kontakt: Wohnort, Region, Land
 - Network Map als eigene Ansicht
@@ -14,3 +14,10 @@ Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mi
 ## Start lokal
 
 `index.html` im Browser öffnen.
+
+
+## v8
+- Latitude/Longitude aus Kontaktformular entfernt
+- automatische Standortauflösung über Wohnort/Region/Land
+- interaktive Karte responsive optimiert
+- Weltkarten-Ansicht mit niedrigem Zoom und nutzbaren Pins
