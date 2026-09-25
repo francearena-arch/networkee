@@ -7,9 +7,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=20" />
+  <link rel="manifest" href="manifest.json?v=21" />
   <link rel="apple-touch-icon" href="networkee-apple-touch-icon.png" />
-  <link rel="stylesheet" href="styles.css?v=20" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="styles.css?v=21" />
 </head>
 <body>
 <div class="app-shell">
@@ -27,6 +28,7 @@
       <button class="menu-link" data-nav="people"><strong>People</strong><span>Deine Beziehungen</span></button>
       <button class="menu-link" data-nav="capture"><strong>Capture</strong><span>Einen Moment festhalten</span></button>
       <button class="menu-link" data-nav="insights"><strong>Insights</strong><span>Dein Netzwerk verstehen</span></button>
+      <button class="menu-link" data-nav="map"><strong>Map</strong><span>Dein Netzwerk auf der Welt</span></button>
       <div class="menu-rule"></div>
       <button id="exportBtn" class="menu-link"><strong>Export</strong><span>JSON, CSV oder vCard</span></button>
       <button class="menu-link" data-nav="settings"><strong>Settings</strong><span>Daten & Demo</span></button>
@@ -43,9 +45,27 @@
 
     <section id="people" class="view">
       <div class="page-head"><div><p class="kicker">YOUR NETWORK</p><h1>People</h1></div><button id="addContactBtn" class="round-add" aria-label="Person hinzufügen">+</button></div>
+      <div class="people-view-switch" aria-label="People Ansicht"><button class="active" data-people-view="list">People</button><button data-people-view="map">Map</button></div>
       <div class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Name, Firma, Ort oder Erinnerung" /></div>
       <div id="peopleFilters" class="filter-row"><button class="filter active" data-filter="all">Alle</button><button class="filter" data-filter="attention">Aufmerksamkeit</button><button class="filter" data-filter="work">Work</button><button class="filter" data-filter="close">Close</button></div>
       <div id="contactList" class="people-list"></div>
+    </section>
+
+    <section id="map" class="view">
+      <div class="page-head map-page-head"><div><p class="kicker">NETWORK GEOGRAPHY</p><h1>Map</h1><p>Sieh auf einen Blick, wo dein Netzwerk lebt.</p></div><button id="mapToPeopleBtn" class="text-action">People</button></div>
+      <section class="map-card">
+        <div class="map-summary">
+          <div><strong id="mappedCount">0</strong><span>kartiert</span></div>
+          <div><strong id="countryCount">0</strong><span>Länder</span></div>
+          <button id="fitMapBtn" class="map-fit-btn">Alle anzeigen</button>
+        </div>
+        <div id="networkMap" class="network-map" aria-label="Interaktive Karte deines Netzwerks"></div>
+        <div id="mapStatus" class="map-status" aria-live="polite"></div>
+      </section>
+      <section class="section-block">
+        <div class="section-title"><div><p class="kicker">LOCATIONS</p><h2>Dein Netzwerk weltweit</h2></div></div>
+        <div id="locationList" class="location-list"></div>
+      </section>
     </section>
 
     <section id="capture" class="view">
@@ -98,5 +118,5 @@
 
 <dialog id="profileDialog"><article class="sheet-card profile-sheet"><div id="profileContent"></div><button id="closeProfile" class="secondary full">Schliessen</button></article></dialog>
 <dialog id="exportDialog"><article class="sheet-card"><div class="sheet-head"><div><p class="kicker">YOUR DATA</p><h2>Export</h2></div><button id="closeExport" class="close-btn">×</button></div><div class="export-grid"><button id="exportJsonBtn"><strong>JSON</strong><span>Vollständiges Backup</span></button><button id="exportCsvBtn"><strong>CSV</strong><span>Kontakte & Momente</span></button><button id="exportVcardBtn"><strong>vCard</strong><span>Adressbuchformat</span></button></div></article></dialog>
-<script src="app.js?v=20"></script>
+<script type="module" src="app.js?v=21"></script>
 </body></html>

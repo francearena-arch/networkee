@@ -1,16 +1,19 @@
-# Networkee 2.0 — Product Prototype
+# Networkee 2.1 — Interactive Network Map
 
-Consumer-first rebuild of Networkee around the loop **Remember → Understand → Act**.
+Consumer-first Networkee prototype around **Remember → Understand → Act**.
 
-## Core journey
-- Today: concise relationship brief and prioritized actions
-- People: human-first network view
-- Person: About, Remember, Next, and relationship timeline
-- Capture: fast moment capture for voice/text/meetings
-- Insights: network-level patterns instead of CRM-style scores
+## New in 2.1
+- People now has a `People | Map` view switch.
+- Interactive responsive world map powered by MapLibre GL JS.
+- Contacts are geocoded automatically from city, region and country.
+- No latitude/longitude fields are shown to users.
+- Contact markers open a compact person preview and profile.
+- `Alle anzeigen` fits all mapped contacts into view.
+- Geocoding results are cached locally to avoid repeat requests.
+- Geography remains accessible from Insights and the side menu.
 
-## Deliberately removed from primary UX
-The experimental interactive map has been removed from the main navigation. Location data remains in the contact model and Network Geography is represented as an insight preview until a backend and professional geocoding layer are introduced.
+## Prototype note
+This GitHub Pages prototype uses MapLibre's public demo style and the public OpenStreetMap Nominatim geocoder for low-volume testing. Nominatim requests are cached and sequential. Before a public/commercial launch, replace the geocoder/style infrastructure with a production provider or your own backend/proxy.
 
-## Data migration
-Existing localStorage data from Networkee MVP v1–v8 is migrated automatically into the Networkee 2.0 storage key.
+## Files
+This release archive intentionally contains only the files required by the current app.
