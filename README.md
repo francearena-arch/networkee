@@ -1,22 +1,16 @@
-# Networkee MVP v9
+# Networkee 2.0 — Product Prototype
 
-Weiterentwickelter klickbarer PWA-Prototyp für Networkee als Relationship OS mit hochwertiger interaktiver Network Map.
+Consumer-first rebuild of Networkee around the loop **Remember → Understand → Act**.
 
-## Neu in v9
+## Core journey
+- Today: concise relationship brief and prioritized actions
+- People: human-first network view
+- Person: About, Remember, Next, and relationship timeline
+- Capture: fast moment capture for voice/text/meetings
+- Insights: network-level patterns instead of CRM-style scores
 
-- echte interaktive Karte mit Leaflet und CARTO/OpenStreetMap-Tiles
-- automatische Standortauflösung über Wohnort, Region und Land
-- Online-Geocoding über OpenStreetMap/Nominatim mit lokalem Cache
-- zusätzliche Stadt-Fallbacks für häufige Schweizer Orte
-- sichtbare Pins für erkannte Kontaktstandorte
-- optimiertes Map-Fitting auf tatsächliche Kontaktstandorte
-- Latitude/Longitude bleiben vollständig ausgeblendet
-- bessere mobile Darstellung der Karte
+## Deliberately removed from primary UX
+The experimental interactive map has been removed from the main navigation. Location data remains in the contact model and Network Geography is represented as an insight preview until a backend and professional geocoding layer are introduced.
 
-## Start lokal
-
-`index.html` im Browser öffnen.
-
-## Hinweis
-
-Die Karte und das Online-Geocoding benötigen Internetzugriff. Erkannte Standorte werden lokal im Browser gecached.
+## Data migration
+Existing localStorage data from Networkee MVP v1–v8 is migrated automatically into the Networkee 2.0 storage key.

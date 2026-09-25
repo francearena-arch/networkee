@@ -2,240 +2,101 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#172554" />
-  <link rel="apple-touch-icon" sizes="180x180" href="networkee-apple-touch-icon.png?v=7.0" />
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=7.0" />
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png?v=7.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#F6F7FB" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Networkee</title>
-  <link rel="manifest" href="manifest.json?v=9.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIINfQz50tXTknaMr5XsV3E0hA+NZpGAaGs=" crossorigin="" />
-  <link rel="stylesheet" href="styles.css?v=9.0" />
+  <link rel="manifest" href="manifest.json?v=20" />
+  <link rel="apple-touch-icon" href="networkee-apple-touch-icon.png" />
+  <link rel="stylesheet" href="styles.css?v=20" />
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">The New Art of Relationship Management</p>
-        <h1>Networkee</h1>
-      </div>
-      <button id="menuBtn" class="menu-btn" aria-label="Menü öffnen" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-    </header>
+<div class="app-shell">
+  <header class="topbar">
+    <button class="brand" data-nav="today" aria-label="Today öffnen">
+      <img src="networkee-icon.png" alt="" /><span>Networkee</span>
+    </button>
+    <button id="menuBtn" class="icon-btn" aria-label="Menü öffnen"><i></i><i></i><i></i></button>
+  </header>
 
-    <aside id="sideMenu" class="side-menu" aria-hidden="true">
-      <div class="menu-panel">
-        <div class="menu-head">
-          <img src="networkee-icon.png?v=7.0" alt="Networkee Icon" />
-          <div>
-            <strong>Networkee</strong>
-            <p>Relationship OS</p>
-          </div>
-          <button id="closeMenuBtn" class="close-btn" aria-label="Menü schliessen">×</button>
-        </div>
-        <button class="menu-item" data-nav="today">Today <span>Was jetzt zählt</span></button>
-        <button class="menu-item" data-nav="network">Network <span>Menschen & Beziehungen</span></button>
-        <button class="menu-item" data-nav="capture">Capture <span>Gespräche festhalten</span></button>
-        <button class="menu-item" data-nav="insights">Insights <span>Signale & Empfehlungen</span></button>
-        <button class="menu-item" data-nav="map">Map <span>Geografische Netzwerkübersicht</span></button>
-        <button class="menu-item" data-nav="settings">Settings <span>Daten & Demo</span></button>
-        <div class="menu-divider"></div>
-        <button id="shareQrBtn" class="menu-item secondary">QR teilen <span>Digitaler Networkee-Code</span></button>
-        <button id="scanQrBtn" class="menu-item secondary">QR scannen <span>Kontakt oder Visitenkarte erfassen</span></button>
-        <button class="menu-item secondary" data-nav="map">Network Map <span>Cluster nach Ort und Land</span></button>
-        <button id="importBtn" class="menu-item secondary">Import <span>Kontakte später synchronisieren</span></button>
-        <button id="exportBtn" class="menu-item secondary">Export Hub <span>JSON, CSV, PDF oder vCard</span></button>
-        <button id="helpBtn" class="menu-item secondary">Hilfe <span>Quick Tour & Support</span></button>
-      </div>
-    </aside>
+  <aside id="sideMenu" class="side-menu" aria-hidden="true">
+    <div class="menu-sheet">
+      <div class="menu-brand"><img src="networkee-icon.png" alt=""/><div><strong>Networkee</strong><span>Your relationship memory</span></div><button id="closeMenuBtn" class="close-btn">×</button></div>
+      <button class="menu-link" data-nav="today"><strong>Today</strong><span>Was heute zählt</span></button>
+      <button class="menu-link" data-nav="people"><strong>People</strong><span>Deine Beziehungen</span></button>
+      <button class="menu-link" data-nav="capture"><strong>Capture</strong><span>Einen Moment festhalten</span></button>
+      <button class="menu-link" data-nav="insights"><strong>Insights</strong><span>Dein Netzwerk verstehen</span></button>
+      <div class="menu-rule"></div>
+      <button id="exportBtn" class="menu-link"><strong>Export</strong><span>JSON, CSV oder vCard</span></button>
+      <button class="menu-link" data-nav="settings"><strong>Settings</strong><span>Daten & Demo</span></button>
+    </div>
+  </aside>
 
-    <main>
-      <section id="today" class="view active">
-        <div class="hero-card emotional">
-          <div class="hero-brand">
-            <img src="networkee-icon.png?v=7.0" alt="Networkee Icon" class="hero-icon" />
-            <div>
-              <p class="eyebrow">Heute im Fokus</p>
-              <h2>Dein Netzwerk erinnert sich nicht von selbst.</h2>
-              <p>Networkee zeigt dir, welche Beziehung heute Aufmerksamkeit verdient – bevor Kontakte kalt werden.</p>
-            </div>
-          </div>
-        </div>
+  <main>
+    <section id="today" class="view active">
+      <div class="page-intro"><p class="kicker" id="todayDate"></p><h1 id="greeting">Guten Abend.</h1><p>Deine Beziehungen, auf das Wesentliche reduziert.</p></div>
+      <section id="briefCard" class="brief-card"></section>
+      <section class="section-block"><div class="section-title"><div><p class="kicker">TODAY</p><h2>Was Aufmerksamkeit verdient</h2></div><span id="actionCount" class="count-pill">0</span></div><div id="todayActions" class="action-stack"></div></section>
+      <section class="section-block"><div class="section-title"><div><p class="kicker">COMING UP</p><h2>Damit nichts untergeht</h2></div></div><div id="comingUp" class="coming-grid"></div></section>
+    </section>
 
-        <section class="panel feed-panel">
-          <div class="section-head"><h3>Relationship Feed</h3><button class="text-btn" data-nav="insights">Alle ansehen</button></div>
-          <div id="relationshipFeed" class="feed-list"></div>
-        </section>
+    <section id="people" class="view">
+      <div class="page-head"><div><p class="kicker">YOUR NETWORK</p><h1>People</h1></div><button id="addContactBtn" class="round-add" aria-label="Person hinzufügen">+</button></div>
+      <div class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Name, Firma, Ort oder Erinnerung" /></div>
+      <div id="peopleFilters" class="filter-row"><button class="filter active" data-filter="all">Alle</button><button class="filter" data-filter="attention">Aufmerksamkeit</button><button class="filter" data-filter="work">Work</button><button class="filter" data-filter="close">Close</button></div>
+      <div id="contactList" class="people-list"></div>
+    </section>
 
-        <section class="assistant-card ai-focus">
-          <p class="eyebrow">Networkee Assistant</p>
-          <h3 id="assistantHeadline">Heute ist dein Netzwerk stabil.</h3>
-          <p id="assistantCopy">Erfasse weitere Interaktionen, damit Networkee bessere Signale erkennt.</p>
-        </section>
+    <section id="capture" class="view">
+      <div class="page-intro"><p class="kicker">CAPTURE</p><h1>Was ist passiert?</h1><p>Halte den Moment fest. Networkee macht daraus Kontext für später.</p></div>
+      <button id="voiceNoteBtn" class="voice-hero"><span class="voice-orb">◉</span><div><strong>Gespräch festhalten</strong><small>Voice Memo starten</small></div><b>→</b></button>
+      <div class="capture-modes"><button id="textNoteBtn"><span>✎</span><strong>Notiz</strong></button><button id="meetingNoteBtn"><span>◷</span><strong>Meeting</strong></button></div>
+      <form id="noteForm" class="capture-form">
+        <label>Person<select id="noteContact" required></select></label>
+        <label>Moment<select id="noteType"><option>Meeting</option><option>Call</option><option>Nachricht</option><option>Zufälliges Gespräch</option><option>Voice Note</option></select></label>
+        <label>Was soll Networkee erinnern?<textarea id="noteText" rows="5" placeholder="Themen, persönliche Details, Entscheidungen, gemeinsame Erlebnisse …" required></textarea></label>
+        <div class="two-col"><label>Nächster Schritt<input id="nextStep" placeholder="z. B. Artikel schicken" /></label><label>Follow-up<input id="followupDate" type="date" /></label></div>
+        <button class="primary full" type="submit">Moment speichern</button>
+      </form>
+    </section>
 
-        <div class="stats-grid compact">
-          <article class="stat-card"><span id="dueTodayCount">0</span><p>Heute fällig</p></article>
-          <article class="stat-card warning"><span id="atRiskCount">0</span><p>Gefährdet</p></article>
-          <article class="stat-card"><span id="topContactCount">0</span><p>Top-Kontakte</p></article>
-        </div>
+    <section id="insights" class="view">
+      <div class="page-intro"><p class="kicker">INSIGHTS</p><h1>Dein Netzwerk verstehen.</h1><p>Keine Rankings. Nur Muster, die dir helfen, Beziehungen bewusster zu pflegen.</p></div>
+      <div id="networkHealth" class="health-card"></div>
+      <div id="insightList" class="insight-stack"></div>
+      <section id="geoPreview" class="geo-preview"></section>
+    </section>
 
-        <section class="panel">
-          <div class="section-head">
-            <h3>Heute erledigen</h3>
-            <button class="text-btn" data-nav="capture">+ Erfassen</button>
-          </div>
-          <div id="todayList" class="list empty-state">Keine dringenden Beziehungspunkte für heute.</div>
-        </section>
+    <section id="settings" class="view">
+      <div class="page-intro"><p class="kicker">SETTINGS</p><h1>Networkee</h1><p>Dieser Product Prototype speichert Daten weiterhin lokal auf diesem Gerät.</p></div>
+      <section class="settings-card"><h2>Deine Daten</h2><p>Für die nächste Produktphase sind Account, Cloud-Sync und Integrationen vorgesehen.</p><button id="resetDemoBtn" class="secondary full">Demo zurücksetzen</button><button id="clearDataBtn" class="danger full">Lokale Daten löschen</button></section>
+    </section>
+  </main>
 
-        <section class="panel">
-          <div class="section-head"><h3>Relationship Radar</h3><button class="text-btn" data-nav="network">Öffnen</button></div>
-          <div id="signalList" class="signal-grid"></div>
-        </section>
-      </section>
+  <nav class="bottom-nav" aria-label="Hauptnavigation">
+    <button class="nav-btn active" data-nav="today"><span>⌂</span><b>Today</b></button>
+    <button class="nav-btn" data-nav="people"><span>◎</span><b>People</b></button>
+    <button class="nav-btn capture-nav" data-nav="capture"><span>＋</span><b>Capture</b></button>
+    <button class="nav-btn" data-nav="insights"><span>◇</span><b>Insights</b></button>
+  </nav>
+</div>
 
-      <section id="network" class="view">
-        <div class="section-head sticky-head">
-          <h2>Network</h2>
-          <button id="addContactBtn" class="primary-btn">+ Person</button>
-        </div>
-        <input id="searchInput" class="search" placeholder="Person, Firma, Tag, Kontext suchen …" />
-        <div id="contactList" class="contact-list"></div>
-      </section>
+<dialog id="contactDialog"><form id="contactForm" method="dialog" class="sheet-card">
+  <div class="sheet-head"><div><p class="kicker">PERSON</p><h2 id="dialogTitle">Person hinzufügen</h2></div><button type="button" id="cancelDialog" class="close-btn">×</button></div>
+  <input type="hidden" id="contactId" />
+  <label>Name<input id="contactName" required placeholder="Name" /></label>
+  <div class="two-col"><label>Rolle / Kontext<input id="contactRole" placeholder="z. B. Sales" /></label><label>Firma<input id="contactCompany" placeholder="Firma" /></label></div>
+  <div class="two-col"><label>Wohnort<input id="contactCity" placeholder="Zürich" /></label><label>Land<input id="contactCountry" placeholder="Schweiz" /></label></div>
+  <label>Region<input id="contactRegion" placeholder="z. B. Zürich" /></label>
+  <label>Beziehung<select id="relationshipGoal"><option>Kontakt warm halten</option><option>Geschäftschance entwickeln</option><option>Mentoring / Karriere</option><option>Privater Kontakt</option><option>Strategischer Netzwerk-Kontakt</option></select></label>
+  <div class="two-col"><label>Relevanz<select id="contactPriority"><option>High</option><option selected>Medium</option><option>Low</option></select></label><label>Geburtstag<input id="contactBirthday" type="date" /></label></div>
+  <label>Interessen & Themen<input id="contactTags" placeholder="Padel, AI, Payments …" /></label>
+  <label>Was möchtest du über diese Person erinnern?<textarea id="contactMemory" rows="4" placeholder="Persönliche Details, gemeinsame Themen, Präferenzen …"></textarea></label>
+  <button type="submit" class="primary full">Person speichern</button>
+</form></dialog>
 
-      <section id="capture" class="view">
-        <div class="section-head"><h2>Capture</h2></div>
-        <div class="voice-card capture-intro">
-          <p class="eyebrow">Was ist passiert?</p>
-          <h3>Halte den Moment fest, solange er frisch ist.</h3>
-          <div class="capture-options">
-            <button id="voiceNoteBtn" class="capture-chip" type="button">🎙️ Voice Memo</button>
-            <button id="textNoteBtn" class="capture-chip" type="button">✍️ Gesprächsnotiz</button>
-            <button id="meetingNoteBtn" class="capture-chip" type="button">📅 Meeting</button>
-            <button id="cardScanBtn" class="capture-chip" type="button">📷 Visitenkarte</button>
-          </div>
-          <p>Später wird daraus der schnellste KI-Flow: erfassen, transkribieren, verdichten, erinnern lassen.</p>
-        </div>
-        <form id="noteForm" class="form-card">
-          <label>Person
-            <select id="noteContact" required></select>
-          </label>
-          <label>Art der Interaktion
-            <select id="noteType">
-              <option>Meeting</option>
-              <option>Call</option>
-              <option>Nachricht</option>
-              <option>Zufälliges Gespräch</option>
-              <option>Voice Note</option>
-            </select>
-          </label>
-          <label>Notiz / Gesprächszusammenfassung
-            <textarea id="noteText" rows="6" placeholder="Was wurde besprochen? Interessen, private Details, Chancen, nächste Schritte …" required></textarea>
-          </label>
-          <label>Nächster Schritt
-            <input id="nextStep" placeholder="z. B. In 2 Wochen nachfragen" />
-          </label>
-          <label>Follow-up Datum
-            <input id="followupDate" type="date" />
-          </label>
-          <button class="primary-btn full" type="submit">Interaktion speichern</button>
-        </form>
-      </section>
-
-      <section id="insights" class="view">
-        <div class="section-head"><h2>Insights</h2></div>
-        <div id="insightList" class="list empty-state">Noch keine Insights vorhanden.</div>
-      </section>
-
-      <section id="map" class="view">
-        <div class="section-head"><h2>Network Map</h2><button class="text-btn" data-nav="network">Kontakte</button></div>
-        <div id="mapRoot"></div>
-      </section>
-
-      <section id="settings" class="view">
-        <div class="section-head"><h2>Settings</h2></div>
-        <section class="panel">
-          <h3>Datenspeicherung</h3>
-          <p class="muted">Dieses MVP speichert Daten lokal im Browser. Noch kein Login, kein Backend und keine Synchronisierung.</p>
-          <div class="settings-actions">
-            <button id="resetDemoBtn" class="ghost-btn">Demo-Daten zurücksetzen</button>
-            <button id="clearDataBtn" class="danger-btn">Alle Daten löschen</button>
-          </div>
-        </section>
-      </section>
-    </main>
-
-    <nav class="bottom-nav">
-      <button class="nav-btn active" data-nav="today">Today</button>
-      <button class="nav-btn" data-nav="network">Network</button>
-      <button class="nav-btn capture" data-nav="capture">Capture</button>
-      <button class="nav-btn" data-nav="insights">Insights</button>
-      <button class="nav-btn" data-nav="map">Map</button>
-    </nav>
-  </div>
-
-  <dialog id="contactDialog">
-    <form id="contactForm" method="dialog" class="dialog-card">
-      <h2 id="dialogTitle">Person hinzufügen</h2>
-      <input type="hidden" id="contactId" />
-      <label>Name<input id="contactName" required placeholder="z. B. Peter Streiff" /></label>
-      <label>Rolle / Kontext<input id="contactRole" placeholder="z. B. Sales Mentor" /></label>
-      <label>Firma<input id="contactCompany" placeholder="z. B. Nexi" /></label>
-      <div class="form-row">
-        <label>Wohnort<input id="contactCity" placeholder="z. B. Zürich" /></label>
-        <label>Region<input id="contactRegion" placeholder="z. B. Zürich" /></label>
-      </div>
-      <label>Land<input id="contactCountry" placeholder="z. B. Schweiz" /></label>
-      <p class="form-hint">Networkee erkennt Koordinaten automatisch anhand von Wohnort, Region und Land. Du musst keine Latitude oder Longitude erfassen.</p>
-      <label>Tags<input id="contactTags" placeholder="Sales, Mentor, Netzwerk" /></label>
-      <label>Priorität
-        <select id="contactPriority"><option>High</option><option selected>Medium</option><option>Low</option></select>
-      </label>
-      <label>Geburtstag<input id="contactBirthday" type="date" /></label>
-      <label>Beziehungsziel
-        <select id="relationshipGoal">
-          <option>Kontakt warm halten</option>
-          <option>Geschäftschance entwickeln</option>
-          <option>Mentoring / Karriere</option>
-          <option>Privater Kontakt</option>
-          <option>Strategischer Netzwerk-Kontakt</option>
-        </select>
-      </label>
-      <label>Wichtig zu merken<textarea id="contactMemory" rows="4" placeholder="Persönliche Details, Interessen, letzte Themen …"></textarea></label>
-      <div class="dialog-actions">
-        <button type="button" id="cancelDialog" class="ghost-btn">Abbrechen</button>
-        <button type="submit" class="primary-btn">Speichern</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="profileDialog">
-    <article class="dialog-card profile-card">
-      <div id="profileContent"></div>
-      <div class="dialog-actions">
-        <button type="button" id="closeProfile" class="ghost-btn">Schliessen</button>
-      </div>
-    </article>
-  </dialog>
-
-
-  <dialog id="exportDialog">
-    <article class="dialog-card export-card">
-      <h2>Export Center</h2>
-      <p class="muted">Sichere deine lokalen Networkee-Daten im gewünschten Format.</p>
-      <div class="export-options">
-        <button id="exportJsonBtn" class="export-option" type="button"><strong>JSON</strong><span>Vollständiges Backup für spätere Migration</span></button>
-        <button id="exportCsvBtn" class="export-option" type="button"><strong>CSV</strong><span>Kontakte und Interaktionen als Tabellen</span></button>
-        <button id="exportPdfBtn" class="export-option" type="button"><strong>PDF</strong><span>Relationship Report als lesbares Dokument</span></button>
-        <button id="exportVcardBtn" class="export-option" type="button"><strong>vCard</strong><span>Kontakte als Adressbuch-Datei</span></button>
-      </div>
-      <div class="dialog-actions">
-        <button type="button" id="closeExport" class="ghost-btn">Schliessen</button>
-      </div>
-    </article>
-  </dialog>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="app.js?v=9.0"></script>
-</body>
-</html>
+<dialog id="profileDialog"><article class="sheet-card profile-sheet"><div id="profileContent"></div><button id="closeProfile" class="secondary full">Schliessen</button></article></dialog>
+<dialog id="exportDialog"><article class="sheet-card"><div class="sheet-head"><div><p class="kicker">YOUR DATA</p><h2>Export</h2></div><button id="closeExport" class="close-btn">×</button></div><div class="export-grid"><button id="exportJsonBtn"><strong>JSON</strong><span>Vollständiges Backup</span></button><button id="exportCsvBtn"><strong>CSV</strong><span>Kontakte & Momente</span></button><button id="exportVcardBtn"><strong>vCard</strong><span>Adressbuchformat</span></button></div></article></dialog>
+<script src="app.js?v=20"></script>
+</body></html>
